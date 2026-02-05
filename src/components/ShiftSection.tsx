@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ShiftType, ContrastType, SHIFT_LABELS, SHIFT_TIMES, ShiftData } from '@/types/contrast';
 import { ContrastTable } from './ContrastTable';
 import { ShiftMetadata } from './ShiftMetadata';
-import { ChevronDown, ChevronUp, Sun, Sunset, Moon } from 'lucide-react';
+import { ChevronDown, Sun, Sunset, Moon } from 'lucide-react';
 
 interface ShiftSectionProps {
   shift: ShiftType;
@@ -39,14 +39,14 @@ export const ShiftSection = ({
   const isMorning = shift === 'morning';
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden transition-all duration-200">
+    <div className="bg-card rounded-2xl border border-border/50 shadow-lg shadow-black/5 overflow-hidden transition-all duration-300">
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full flex items-center justify-between p-4 ${shiftHeaderStyles[shift]} border-b transition-colors hover:opacity-90`}
+        className={`w-full flex items-center justify-between p-5 ${shiftHeaderStyles[shift]} transition-all duration-200 hover:bg-secondary/30`}
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-background/80 rounded-lg shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
             {shiftIcons[shift]}
           </div>
           <div className="text-left">
@@ -54,17 +54,15 @@ export const ShiftSection = ({
             <p className="text-sm text-muted-foreground">{SHIFT_TIMES[shift]}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {shiftData.metadata.attestation && (
-            <span className="px-2 py-1 text-xs font-medium bg-success/10 text-success rounded-full">
-              Verified
+            <span className="px-3 py-1.5 text-xs font-medium bg-primary/15 text-primary rounded-full">
+              ✓ Verified
             </span>
           )}
-          {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-muted-foreground" />
-          ) : (
+          <div className={`p-1.5 rounded-lg transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
             <ChevronDown className="h-5 w-5 text-muted-foreground" />
-          )}
+          </div>
         </div>
       </button>
 
