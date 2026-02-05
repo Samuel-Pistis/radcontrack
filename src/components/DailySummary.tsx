@@ -44,98 +44,89 @@ export const DailySummary = ({ data }: DailySummaryProps) => {
   const hasData = chartData.length > 0;
 
   return (
-    <div className="bg-card rounded-2xl border border-border/50 p-5 shadow-lg shadow-black/5">
-      <h3 className="text-lg font-semibold text-foreground mb-4">Daily Summary</h3>
+    <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-lg shadow-black/5">
+      <h3 className="text-base font-semibold text-foreground mb-3">Daily Summary</h3>
       
-      <div className="flex flex-col lg:flex-row items-center gap-6">
-        {/* Donut Chart */}
-        <div className="relative w-48 h-48 shrink-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={hasData ? chartData : [{ name: 'No data', value: 1 }]}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={75}
-                paddingAngle={hasData ? 3 : 0}
-                dataKey="value"
-                strokeWidth={0}
-              >
-                {hasData ? (
-                  chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))
-                ) : (
-                  <Cell fill="hsl(175, 20%, 20%)" />
-                )}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          
-          {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-bold text-primary">
-              {totalConsumed.toLocaleString()}
+      {/* Donut Chart */}
+      <div className="relative w-full aspect-square max-w-[180px] mx-auto mb-4">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={hasData ? chartData : [{ name: 'No data', value: 1 }]}
+              cx="50%"
+              cy="50%"
+              innerRadius="60%"
+              outerRadius="85%"
+              paddingAngle={hasData ? 3 : 0}
+              dataKey="value"
+              strokeWidth={0}
+            >
+              {hasData ? (
+                chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))
+              ) : (
+                <Cell fill="hsl(175, 20%, 20%)" />
+              )}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+        
+        {/* Center content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold text-primary">
+            {totalConsumed.toLocaleString()}
+          </span>
+          <span className="text-xs text-muted-foreground">mls used</span>
+          {totalReceived > 0 && (
+            <span className={`text-xs font-medium mt-0.5 ${
+              consumptionPercentage > 100 ? 'text-destructive' : 
+              consumptionPercentage > 80 ? 'text-warning' : 'text-muted-foreground'
+            }`}>
+              {consumptionPercentage}% of stock
             </span>
-            <span className="text-xs text-muted-foreground">mls used</span>
-            {totalReceived > 0 && (
-              <span className={`text-sm font-medium mt-1 ${
-                consumptionPercentage > 80 ? 'text-warning' : 
-                consumptionPercentage > 100 ? 'text-destructive' : 'text-muted-foreground'
-              }`}>
-                {consumptionPercentage}% of stock
-              </span>
-            )}
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* Legend and stats */}
-        <div className="flex-1 w-full space-y-3">
-          {consumptionByType.map((item, index) => (
-            <div key={item.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: COLORS[index] }}
-                />
-                <span className="text-sm text-foreground">{item.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-foreground">
-                  {item.value.toLocaleString()} mls
-                </span>
-                {totalConsumed > 0 && (
-                  <span className="text-xs text-muted-foreground w-12 text-right">
-                    {Math.round((item.value / totalConsumed) * 100) || 0}%
-                  </span>
-                )}
-              </div>
+      {/* Legend */}
+      <div className="space-y-2 mb-4">
+        {consumptionByType.map((item, index) => (
+          <div key={item.name} className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: COLORS[index] }}
+              />
+              <span className="text-foreground text-xs">{item.name}</span>
             </div>
-          ))}
-          
-          {/* Divider */}
-          <div className="border-t border-border pt-3 mt-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Total Stock</span>
-              <span className="text-sm font-semibold text-foreground">{totalReceived.toLocaleString()} mls</span>
-            </div>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-sm font-medium text-muted-foreground">Remaining</span>
-              <span className={`text-sm font-semibold ${
-                totalReceived - totalConsumed < 0 ? 'text-destructive' : 'text-primary'
-              }`}>
-                {(totalReceived - totalConsumed).toLocaleString()} mls
-              </span>
-            </div>
+            <span className="font-medium text-foreground text-xs">
+              {item.value.toLocaleString()}
+            </span>
           </div>
+        ))}
+      </div>
+      
+      {/* Stock Summary */}
+      <div className="border-t border-border pt-3 space-y-1.5">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Total Stock</span>
+          <span className="font-semibold text-foreground">{totalReceived.toLocaleString()} mls</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Remaining</span>
+          <span className={`font-semibold ${
+            totalReceived - totalConsumed < 0 ? 'text-destructive' : 'text-primary'
+          }`}>
+            {(totalReceived - totalConsumed).toLocaleString()} mls
+          </span>
         </div>
       </div>
 
       {/* Shift breakdown */}
-      <div className="mt-5 pt-4 border-t border-border">
-        <h4 className="text-sm font-medium text-muted-foreground mb-3">Consumption by Shift</h4>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="mt-4 pt-3 border-t border-border">
+        <h4 className="text-xs font-medium text-muted-foreground mb-2">By Shift</h4>
+        <div className="space-y-2">
           {(['morning', 'afternoon', 'night'] as const).map((shift) => {
             const shiftTotal = CONTRAST_TYPES.reduce((sum, type) => {
               return sum + data[shift][type].consumption.mls;
@@ -143,15 +134,19 @@ export const DailySummary = ({ data }: DailySummaryProps) => {
             const shiftPercentage = totalConsumed > 0 ? Math.round((shiftTotal / totalConsumed) * 100) : 0;
             
             return (
-              <div 
-                key={shift} 
-                className="bg-muted/50 rounded-xl p-3 text-center"
-              >
+              <div key={shift} className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground capitalize">{shift}</span>
-                <div className="text-lg font-semibold text-foreground mt-1">
-                  {shiftTotal.toLocaleString()}
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${shiftPercentage}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-foreground w-12 text-right">
+                    {shiftTotal.toLocaleString()}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">{shiftPercentage}%</span>
               </div>
             );
           })}
