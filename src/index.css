@@ -4,40 +4,40 @@
 
 @layer base {
   :root {
-    /* Clinical color scheme */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    /* Dark green + neon lime color scheme */
+    --background: 100 12% 8%;
+    --foreground: 0 0% 98%;
     
-    --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card: 100 15% 12%;
+    --card-foreground: 0 0% 98%;
     
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover: 100 15% 12%;
+    --popover-foreground: 0 0% 98%;
     
-    --primary: 205 75% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 82 100% 50%;
+    --primary-foreground: 100 12% 8%;
     
-    --secondary: 210 15% 93%;
-    --secondary-foreground: 215 25% 25%;
+    --secondary: 100 15% 18%;
+    --secondary-foreground: 0 0% 98%;
     
-    --muted: 210 15% 96%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 100 12% 20%;
+    --muted-foreground: 0 0% 65%;
     
-    --accent: 205 65% 92%;
-    --accent-foreground: 205 75% 35%;
+    --accent: 82 100% 58%;
+    --accent-foreground: 100 12% 8%;
     
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --success: 142 72% 40%;
-    --success-foreground: 0 0% 100%;
+    --success: 82 100% 50%;
+    --success-foreground: 100 12% 8%;
     
-    --warning: 45 93% 47%;
-    --warning-foreground: 45 93% 15%;
+    --warning: 45 100% 55%;
+    --warning-foreground: 100 12% 8%;
     
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 205 75% 45%;
+    --border: 100 12% 18%;
+    --input: 100 12% 15%;
+    --ring: 82 100% 50%;
     
     --radius: 0.5rem;
     
@@ -52,33 +52,33 @@
   }
 
   .dark {
-    --background: 215 25% 10%;
-    --foreground: 210 20% 98%;
+    --background: 100 12% 8%;
+    --foreground: 0 0% 98%;
     
-    --card: 215 25% 13%;
-    --card-foreground: 210 20% 98%;
+    --card: 100 15% 12%;
+    --card-foreground: 0 0% 98%;
     
-    --popover: 215 25% 13%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 100 15% 12%;
+    --popover-foreground: 0 0% 98%;
     
-    --primary: 205 75% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 82 100% 50%;
+    --primary-foreground: 100 12% 8%;
     
-    --secondary: 215 20% 20%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 100 15% 18%;
+    --secondary-foreground: 0 0% 98%;
     
-    --muted: 215 20% 18%;
-    --muted-foreground: 210 15% 60%;
+    --muted: 100 12% 20%;
+    --muted-foreground: 0 0% 65%;
     
-    --accent: 205 50% 25%;
-    --accent-foreground: 205 75% 85%;
+    --accent: 82 100% 58%;
+    --accent-foreground: 100 12% 8%;
     
-    --destructive: 0 62% 55%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 215 20% 22%;
-    --input: 215 20% 22%;
-    --ring: 205 75% 50%;
+    --border: 100 12% 18%;
+    --input: 100 12% 15%;
+    --ring: 82 100% 50%;
     
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -126,14 +126,14 @@
   
   /* Shift header gradients */
   .shift-morning {
-    @apply bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200;
+    @apply bg-gradient-to-r from-lime-500/20 to-lime-400/20 border-lime-500/30;
   }
   
   .shift-afternoon {
-    @apply bg-gradient-to-r from-blue-50 to-sky-50 border-blue-200;
+    @apply bg-gradient-to-r from-lime-500/15 to-lime-400/15 border-lime-500/25;
   }
   
   .shift-night {
-    @apply bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200;
+    @apply bg-gradient-to-r from-lime-500/10 to-lime-400/10 border-lime-500/20;
   }
 }
