@@ -15,7 +15,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, FlaskConical } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
+import bthdcLogo from '@/assets/bthdc-logo.png';
 
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
 
@@ -66,15 +67,17 @@ export const Dashboard = () => {
           {/* Title Row */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-primary/15 rounded-xl">
-                <FlaskConical className="h-6 w-6 text-primary" />
-              </div>
+              <img 
+                src={bthdcLogo} 
+                alt="BTHDC Logo" 
+                className="h-12 w-12 object-contain"
+              />
               <div>
-                <h1 className="text-xl font-bold text-foreground">
-                  Contrast Tracker
+                <h1 className="text-lg font-bold text-foreground">
+                  Radiology Daily Contrast Tracker
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  Daily Consumption Chart
+                  BT Health & Diagnostics Centre
                 </p>
               </div>
             </div>
