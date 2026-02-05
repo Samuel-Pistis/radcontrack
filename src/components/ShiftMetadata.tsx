@@ -10,16 +10,6 @@ interface ShiftMetadataProps {
   onAttestationChange: (value: boolean) => void;
 }
 
-const STAFF_OPTIONS = [
-  'Dr. Smith',
-  'Dr. Johnson',
-  'Dr. Williams',
-  'Nurse Davis',
-  'Nurse Miller',
-  'Tech. Anderson',
-  'Tech. Taylor',
-];
-
 export const ShiftMetadata = ({
   metadata,
   onHandedOverToChange,
@@ -34,18 +24,14 @@ export const ShiftMetadata = ({
           <UserCheck className="h-4 w-4 text-primary" />
           Handed Over To
         </Label>
-        <select
+        <input
+          type="text"
           value={metadata.handedOverTo}
           onChange={(e) => onHandedOverToChange(e.target.value)}
           className="clinical-input w-full"
-        >
-          <option value="">Select staff member...</option>
-          {STAFF_OPTIONS.map((staff) => (
-            <option key={staff} value={staff}>
-              {staff}
-            </option>
-          ))}
-        </select>
+          placeholder="Enter staff name"
+          maxLength={100}
+        />
       </div>
 
       {/* Calculated By */}
@@ -54,21 +40,15 @@ export const ShiftMetadata = ({
           <Calculator className="h-4 w-4 text-primary" />
           Calculated By
         </Label>
-        <select
+        <input
+          type="text"
           value={metadata.calculatedBy}
           onChange={(e) => onCalculatedByChange(e.target.value)}
           className="clinical-input w-full"
-        >
-          <option value="">Select staff member...</option>
-          {STAFF_OPTIONS.map((staff) => (
-            <option key={staff} value={staff}>
-              {staff}
-            </option>
-          ))}
-        </select>
+          placeholder="Enter staff name"
+          maxLength={100}
+        />
       </div>
-
-      {/* Attestation */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <ClipboardCheck className="h-4 w-4 text-primary" />
