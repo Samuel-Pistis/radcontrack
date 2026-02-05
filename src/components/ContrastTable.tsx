@@ -37,172 +37,222 @@ export const ContrastTable = ({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="bg-muted/50">
-            <th className="p-3 text-left text-sm font-semibold text-foreground border-b border-border min-w-[140px]">
-              Row Type
-            </th>
-            {CONTRAST_TYPES.map((type) => (
-              <th
-                key={type}
-                colSpan={2}
-                className="p-3 text-center text-sm font-semibold text-foreground border-b border-border border-l"
-              >
-                {CONTRAST_LABELS[type]}
+    <div className="space-y-4">
+      {/* Main Table */}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-muted/50">
+              <th className="p-3 text-left text-sm font-semibold text-foreground border-b border-border min-w-[140px]">
+                Row Type
               </th>
-            ))}
-          </tr>
-          <tr className="bg-muted/30">
-            <th className="p-2 text-left text-xs font-medium text-muted-foreground border-b border-border">
-              &nbsp;
-            </th>
-            {CONTRAST_TYPES.map((type) => (
-              <>
+              {CONTRAST_TYPES.map((type) => (
                 <th
-                  key={`${type}-mls`}
-                  className="p-2 text-center text-xs font-medium text-muted-foreground border-b border-border border-l"
+                  key={type}
+                  colSpan={2}
+                  className="p-3 text-center text-sm font-semibold text-foreground border-b border-border border-l"
                 >
-                  Total (mls)
+                  {CONTRAST_LABELS[type]}
                 </th>
-                <th
-                  key={`${type}-bottles`}
-                  className="p-2 text-center text-xs font-medium text-muted-foreground border-b border-border"
-                >
-                  Total Bottles
-                </th>
-              </>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {/* Total Qty Received Row */}
-          <tr className="hover:bg-muted/20 transition-colors">
-            <td className="p-3 text-sm font-medium text-foreground border-b border-border">
-              Total Qty Received
-              {!isMorning && (
-                <span className="block text-xs text-muted-foreground mt-0.5">
-                  (Auto from previous shift)
+              ))}
+            </tr>
+            <tr className="bg-muted/30">
+              <th className="p-2 text-left text-xs font-medium text-muted-foreground border-b border-border">
+                &nbsp;
+              </th>
+              {CONTRAST_TYPES.map((type) => (
+                <>
+                  <th
+                    key={`${type}-mls`}
+                    className="p-2 text-center text-xs font-medium text-muted-foreground border-b border-border border-l"
+                  >
+                    Total (mls)
+                  </th>
+                  <th
+                    key={`${type}-bottles`}
+                    className="p-2 text-center text-xs font-medium text-muted-foreground border-b border-border"
+                  >
+                    Total Bottles
+                  </th>
+                </>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {/* Total Qty Received Row */}
+            <tr className="hover:bg-muted/20 transition-colors">
+              <td className="p-3 text-sm font-medium text-foreground border-b border-border">
+                Total Qty Received
+                {!isMorning && (
+                  <span className="block text-xs text-muted-foreground mt-0.5">
+                    (Auto from previous shift)
+                  </span>
+                )}
+              </td>
+              {CONTRAST_TYPES.map((type) => {
+                const received = getReceivedValues(shift, type);
+                return (
+                  <>
+                    <td key={`${type}-received-mls`} className="p-2 border-b border-border border-l">
+                      {isMorning ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={received.mls || ''}
+                          onChange={(e) => onReceivedChange(type, 'mls', Number(e.target.value) || 0)}
+                          className="clinical-input text-center"
+                          placeholder="0"
+                        />
+                      ) : (
+                        <div className="clinical-input clinical-input-readonly text-center">
+                          {received.mls}
+                        </div>
+                      )}
+                    </td>
+                    <td key={`${type}-received-bottles`} className="p-2 border-b border-border">
+                      {isMorning ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={received.bottles || ''}
+                          onChange={(e) => onReceivedChange(type, 'bottles', Number(e.target.value) || 0)}
+                          className="clinical-input text-center"
+                          placeholder="0"
+                        />
+                      ) : (
+                        <div className="clinical-input clinical-input-readonly text-center">
+                          {received.bottles}
+                        </div>
+                      )}
+                    </td>
+                  </>
+                );
+              })}
+            </tr>
+
+            {/* Total Consumption Row */}
+            <tr className="hover:bg-muted/20 transition-colors">
+              <td className="p-3 text-sm font-medium text-foreground border-b border-border">
+                Total Consumption
+              </td>
+              {CONTRAST_TYPES.map((type) => (
+                <>
+                  <td key={`${type}-consumption-mls`} className="p-2 border-b border-border border-l">
+                    <input
+                      type="number"
+                      min="0"
+                      value={consumption[type].mls || ''}
+                      onChange={(e) => onConsumptionChange(type, 'mls', Number(e.target.value) || 0)}
+                      className="clinical-input text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                  <td key={`${type}-consumption-bottles`} className="p-2 border-b border-border">
+                    <input
+                      type="number"
+                      min="0"
+                      value={consumption[type].bottles || ''}
+                      onChange={(e) => onConsumptionChange(type, 'bottles', Number(e.target.value) || 0)}
+                      className="clinical-input text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                </>
+              ))}
+            </tr>
+
+            {/* Outstanding Stock Row */}
+            <tr className="bg-accent/30 hover:bg-accent/40 transition-colors">
+              <td className="p-3 text-sm font-bold text-foreground border-b border-border">
+                Outstanding Stock
+                <span className="block text-xs font-normal text-muted-foreground mt-0.5">
+                  (Received - Consumption)
                 </span>
-              )}
-            </td>
-            {CONTRAST_TYPES.map((type) => {
-              const received = getReceivedValues(shift, type);
-              return (
-                <>
-                  <td key={`${type}-received-mls`} className="p-2 border-b border-border border-l">
-                    {isMorning ? (
-                      <input
-                        type="number"
-                        min="0"
-                        value={received.mls || ''}
-                        onChange={(e) => onReceivedChange(type, 'mls', Number(e.target.value) || 0)}
-                        className="clinical-input text-center"
-                        placeholder="0"
-                      />
-                    ) : (
-                      <div className="clinical-input clinical-input-readonly text-center">
-                        {received.mls}
+              </td>
+              {CONTRAST_TYPES.map((type) => {
+                const outstanding = getOutstandingValues(shift, type);
+                const isMlsNegative = outstanding.mls < 0;
+                const isBottlesNegative = outstanding.bottles < 0;
+                return (
+                  <>
+                    <td
+                      key={`${type}-outstanding-mls`}
+                      className={`p-2 border-b border-border border-l text-center ${
+                        isMlsNegative ? 'bg-destructive/10' : ''
+                      }`}
+                    >
+                      <div className={`clinical-input clinical-input-readonly text-center ${
+                        isMlsNegative ? 'stock-negative' : 'stock-positive'
+                      }`}>
+                        {renderValueCell(outstanding.mls, isMlsNegative, true)}
                       </div>
-                    )}
-                  </td>
-                  <td key={`${type}-received-bottles`} className="p-2 border-b border-border">
-                    {isMorning ? (
-                      <input
-                        type="number"
-                        min="0"
-                        value={received.bottles || ''}
-                        onChange={(e) => onReceivedChange(type, 'bottles', Number(e.target.value) || 0)}
-                        className="clinical-input text-center"
-                        placeholder="0"
-                      />
-                    ) : (
-                      <div className="clinical-input clinical-input-readonly text-center">
-                        {received.bottles}
+                    </td>
+                    <td
+                      key={`${type}-outstanding-bottles`}
+                      className={`p-2 border-b border-border text-center ${
+                        isBottlesNegative ? 'bg-destructive/10' : ''
+                      }`}
+                    >
+                      <div className={`clinical-input clinical-input-readonly text-center ${
+                        isBottlesNegative ? 'stock-negative' : 'stock-positive'
+                      }`}>
+                        {renderValueCell(outstanding.bottles, isBottlesNegative, true)}
                       </div>
-                    )}
-                  </td>
-                </>
-              );
-            })}
-          </tr>
+                    </td>
+                  </>
+                );
+              })}
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          {/* Total Consumption Row */}
-          <tr className="hover:bg-muted/20 transition-colors">
-            <td className="p-3 text-sm font-medium text-foreground border-b border-border">
-              Total Consumption
-            </td>
-            {CONTRAST_TYPES.map((type) => (
-              <>
-                <td key={`${type}-consumption-mls`} className="p-2 border-b border-border border-l">
-                  <input
-                    type="number"
-                    min="0"
-                    value={consumption[type].mls || ''}
-                    onChange={(e) => onConsumptionChange(type, 'mls', Number(e.target.value) || 0)}
-                    className="clinical-input text-center"
-                    placeholder="0"
-                  />
-                </td>
-                <td key={`${type}-consumption-bottles`} className="p-2 border-b border-border">
-                  <input
-                    type="number"
-                    min="0"
-                    value={consumption[type].bottles || ''}
-                    onChange={(e) => onConsumptionChange(type, 'bottles', Number(e.target.value) || 0)}
-                    className="clinical-input text-center"
-                    placeholder="0"
-                  />
-                </td>
-              </>
-            ))}
-          </tr>
+      {/* Progress Bars */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {CONTRAST_TYPES.map((type) => {
+          const received = getReceivedValues(shift, type);
+          const consumedMls = consumption[type].mls;
+          const progressPercentage = received.mls > 0 ? (consumedMls / received.mls) * 100 : 0;
+          const isOverLimit = progressPercentage > 100;
 
-          {/* Outstanding Stock Row */}
-          <tr className="bg-accent/30 hover:bg-accent/40 transition-colors">
-            <td className="p-3 text-sm font-bold text-foreground border-b border-border">
-              Outstanding Stock
-              <span className="block text-xs font-normal text-muted-foreground mt-0.5">
-                (Received - Consumption)
-              </span>
-            </td>
-            {CONTRAST_TYPES.map((type) => {
-              const outstanding = getOutstandingValues(shift, type);
-              const isMlsNegative = outstanding.mls < 0;
-              const isBottlesNegative = outstanding.bottles < 0;
-              return (
-                <>
-                  <td
-                    key={`${type}-outstanding-mls`}
-                    className={`p-2 border-b border-border border-l text-center ${
-                      isMlsNegative ? 'bg-destructive/10' : ''
-                    }`}
-                  >
-                    <div className={`clinical-input clinical-input-readonly text-center ${
-                      isMlsNegative ? 'stock-negative' : 'stock-positive'
-                    }`}>
-                      {renderValueCell(outstanding.mls, isMlsNegative, true)}
-                    </div>
-                  </td>
-                  <td
-                    key={`${type}-outstanding-bottles`}
-                    className={`p-2 border-b border-border text-center ${
-                      isBottlesNegative ? 'bg-destructive/10' : ''
-                    }`}
-                  >
-                    <div className={`clinical-input clinical-input-readonly text-center ${
-                      isBottlesNegative ? 'stock-negative' : 'stock-positive'
-                    }`}>
-                      {renderValueCell(outstanding.bottles, isBottlesNegative, true)}
-                    </div>
-                  </td>
-                </>
-              );
-            })}
-          </tr>
-        </tbody>
-      </table>
+          return (
+            <div key={type} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-foreground">
+                  {CONTRAST_LABELS[type]}
+                </span>
+                <span className={`text-xs font-semibold ${isOverLimit ? 'text-destructive' : 'text-primary'}`}>
+                  {Math.min(Math.round(progressPercentage), 999)}%
+                </span>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="relative h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ease-out ${
+                    isOverLimit ? 'bg-destructive' : 'bg-primary'
+                  }`}
+                  style={{
+                    width: `${Math.min(progressPercentage, 100)}%`,
+                  }}
+                />
+              </div>
+
+              {/* Stats */}
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <div className="flex justify-between">
+                  <span>Used:</span>
+                  <span>{consumedMls} mls</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total:</span>
+                  <span>{received.mls} mls</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
