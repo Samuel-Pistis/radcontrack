@@ -1,6 +1,7 @@
 import { useContrastData } from '@/hooks/useContrastData';
 import { ShiftSection } from '@/components/ShiftSection';
 import { DateSelector } from '@/components/DateSelector';
+import { DailySummary } from '@/components/DailySummary';
 import { ShiftType, ContrastType } from '@/types/contrast';
 import { Button } from '@/components/ui/button';
 import {
@@ -116,6 +117,11 @@ export const Dashboard = () => {
 
       {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        {/* Daily Summary Chart */}
+        <div className="mb-6">
+          <DailySummary data={data} />
+        </div>
+
         <div className="space-y-4">
           {SHIFTS.map((shift) => (
             <ShiftSection
