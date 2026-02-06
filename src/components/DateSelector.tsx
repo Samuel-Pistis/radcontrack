@@ -95,10 +95,10 @@ export const DateSelector = ({ selectedDate, onDateChange }: DateSelectorProps) 
                 onClick={() => onDateChange(day)}
                 className={`flex flex-col items-center py-2 px-3 rounded-xl transition-all duration-200 min-w-[44px] ${
                   isSelected
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                    ? 'bg-primary text-primary-foreground shadow-md'
                     : isDayToday
                     ? 'bg-secondary text-foreground'
-                    : 'hover:bg-secondary/50 text-muted-foreground hover:text-foreground'
+                    : 'hover:bg-secondary text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span className="text-xs font-medium uppercase tracking-wide">

@@ -8,10 +8,10 @@ interface DailySummaryProps {
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
 
 const COLORS = [
-  'hsl(162, 72%, 45%)',  // Primary teal
-  'hsl(180, 60%, 40%)',  // Cyan
-  'hsl(200, 65%, 45%)',  // Blue
-  'hsl(145, 55%, 42%)',  // Green
+  'hsl(160, 45%, 22%)',   // Dark forest green
+  'hsl(162, 55%, 38%)',   // Teal
+  'hsl(200, 55%, 45%)',   // Blue
+  'hsl(152, 55%, 42%)',   // Green
 ];
 
 export const DailySummary = ({ data }: DailySummaryProps) => {
@@ -44,7 +44,7 @@ export const DailySummary = ({ data }: DailySummaryProps) => {
   const hasData = chartData.length > 0;
 
   return (
-    <div className="bg-card rounded-2xl border border-border/50 p-4 shadow-lg shadow-black/5">
+    <div className="dashboard-card p-4">
       <h3 className="text-base font-semibold text-foreground mb-3">Daily Summary</h3>
       
       {/* Donut Chart */}
@@ -66,7 +66,7 @@ export const DailySummary = ({ data }: DailySummaryProps) => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))
               ) : (
-                <Cell fill="hsl(175, 20%, 20%)" />
+                <Cell fill="hsl(80, 15%, 87%)" />
               )}
             </Pie>
           </PieChart>

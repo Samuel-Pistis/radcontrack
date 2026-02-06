@@ -39,7 +39,7 @@ export const ShiftSection = ({
   const isMorning = shift === 'morning';
 
   return (
-    <div className="bg-card rounded-2xl border border-border/50 shadow-lg shadow-black/5 overflow-hidden transition-all duration-300">
+    <div className="dashboard-card overflow-hidden transition-all duration-300">
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}

@@ -4,90 +4,101 @@
 
 @layer base {
   :root {
-    /* Dark teal + mint accent color scheme */
-    --background: 175 30% 8%;
-    --foreground: 0 0% 96%;
+    /* Light cream/sage dashboard theme */
+    --background: 80 25% 95%;
+    --foreground: 160 30% 15%;
     
-    --card: 175 25% 12%;
-    --card-foreground: 0 0% 96%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 30% 15%;
     
-    --popover: 175 25% 14%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 30% 15%;
     
-    --primary: 162 72% 45%;
-    --primary-foreground: 175 30% 8%;
+    --primary: 160 45% 22%;
+    --primary-foreground: 0 0% 100%;
     
-    --secondary: 175 25% 18%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 80 20% 90%;
+    --secondary-foreground: 160 30% 15%;
     
-    --muted: 175 20% 16%;
-    --muted-foreground: 175 15% 55%;
+    --muted: 80 15% 91%;
+    --muted-foreground: 160 10% 45%;
     
-    --accent: 162 65% 50%;
-    --accent-foreground: 175 30% 8%;
+    --accent: 162 55% 38%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --success: 162 72% 45%;
-    --success-foreground: 175 30% 8%;
+    --success: 152 55% 42%;
+    --success-foreground: 0 0% 100%;
     
-    --warning: 45 100% 55%;
-    --warning-foreground: 175 30% 8%;
+    --warning: 40 95% 50%;
+    --warning-foreground: 160 30% 15%;
     
-    --border: 175 20% 20%;
-    --input: 175 25% 16%;
-    --ring: 162 72% 45%;
+    --border: 80 15% 87%;
+    --input: 80 15% 87%;
+    --ring: 160 45% 22%;
     
     --radius: 0.75rem;
     
-    --sidebar-background: 175 30% 10%;
+    --sidebar-background: 160 45% 18%;
     --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 162 72% 45%;
-    --sidebar-primary-foreground: 175 30% 8%;
-    --sidebar-accent: 175 25% 18%;
+    --sidebar-primary: 162 55% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 35% 25%;
     --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 175 20% 20%;
-    --sidebar-ring: 162 72% 45%;
+    --sidebar-border: 160 30% 25%;
+    --sidebar-ring: 162 55% 50%;
+
+    /* Custom dashboard tokens */
+    --nav-bg: 160 45% 18%;
+    --nav-foreground: 0 0% 100%;
+    --stat-positive: 152 55% 42%;
+    --stat-negative: 0 72% 55%;
   }
 
   .dark {
-    --background: 175 30% 6%;
+    --background: 160 20% 8%;
     --foreground: 0 0% 96%;
     
-    --card: 175 25% 10%;
+    --card: 160 20% 12%;
     --card-foreground: 0 0% 96%;
     
-    --popover: 175 25% 12%;
+    --popover: 160 20% 14%;
     --popover-foreground: 0 0% 96%;
     
-    --primary: 162 72% 48%;
-    --primary-foreground: 175 30% 6%;
+    --primary: 162 55% 50%;
+    --primary-foreground: 160 30% 8%;
     
-    --secondary: 175 25% 16%;
+    --secondary: 160 20% 16%;
     --secondary-foreground: 0 0% 96%;
     
-    --muted: 175 20% 14%;
-    --muted-foreground: 175 15% 50%;
+    --muted: 160 15% 14%;
+    --muted-foreground: 160 10% 50%;
     
-    --accent: 162 65% 52%;
-    --accent-foreground: 175 30% 6%;
+    --accent: 162 55% 45%;
+    --accent-foreground: 160 30% 8%;
     
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 175 20% 18%;
-    --input: 175 25% 14%;
-    --ring: 162 72% 48%;
+    --border: 160 15% 20%;
+    --input: 160 20% 16%;
+    --ring: 162 55% 50%;
     
-    --sidebar-background: 175 30% 8%;
+    --sidebar-background: 160 30% 10%;
     --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 162 72% 48%;
-    --sidebar-primary-foreground: 175 30% 6%;
-    --sidebar-accent: 175 25% 16%;
+    --sidebar-primary: 162 55% 50%;
+    --sidebar-primary-foreground: 160 30% 8%;
+    --sidebar-accent: 160 25% 18%;
     --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 175 20% 18%;
-    --sidebar-ring: 162 72% 48%;
+    --sidebar-border: 160 20% 20%;
+    --sidebar-ring: 162 55% 50%;
+
+    --nav-bg: 160 30% 10%;
+    --nav-foreground: 0 0% 96%;
+    --stat-positive: 162 55% 50%;
+    --stat-negative: 0 72% 55%;
   }
 }
 
@@ -103,9 +114,9 @@
   
   /* Clinical table styling */
   .clinical-input {
-    @apply h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm 
-           transition-colors focus-visible:outline-none focus-visible:ring-2 
-           focus-visible:ring-ring focus-visible:ring-offset-1;
+    @apply h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm 
+           transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-ring/30 focus-visible:border-primary;
   }
   
   .clinical-input:disabled {
@@ -113,7 +124,7 @@
   }
   
   .clinical-input-readonly {
-    @apply bg-muted cursor-default font-semibold;
+    @apply bg-muted/50 cursor-default font-semibold border-transparent;
   }
   
   .stock-negative {
@@ -126,14 +137,25 @@
   
   /* Shift header styles */
   .shift-morning {
-    @apply bg-secondary/80 border-primary/20;
+    @apply bg-amber-50/80 border-amber-200/40;
   }
   
   .shift-afternoon {
-    @apply bg-secondary/60 border-primary/15;
+    @apply bg-orange-50/60 border-orange-200/30;
   }
   
   .shift-night {
-    @apply bg-secondary/40 border-primary/10;
+    @apply bg-indigo-50/50 border-indigo-200/30;
+  }
+
+  /* Dashboard nav */
+  .dashboard-nav {
+    background: hsl(var(--nav-bg));
+    color: hsl(var(--nav-foreground));
+  }
+  
+  /* Dashboard card */
+  .dashboard-card {
+    @apply bg-card rounded-2xl border border-border/40 shadow-sm;
   }
 }
