@@ -25,6 +25,7 @@ export const Dashboard = () => {
     selectedDate,
     setSelectedDate,
     data,
+    isLoading,
     updateReceived,
     updateConsumption,
     getReceivedValues,
