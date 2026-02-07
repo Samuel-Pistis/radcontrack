@@ -34,7 +34,7 @@ export const useContrastData = () => {
 
         if (error) {
           console.error('Error loading data:', error);
-          toast({ title: 'Error loading data', description: error.message, variant: 'destructive' });
+          toast({ title: 'Error loading data', description: 'Unable to load data. Please try again or contact support.', variant: 'destructive' });
           setData(createEmptyDailyData(dateKey));
         } else if (row?.data) {
           setData(row.data as unknown as DailyData);
@@ -69,7 +69,7 @@ export const useContrastData = () => {
 
         if (error) {
           console.error('Error saving data:', error);
-          toast({ title: 'Error saving data', description: error.message, variant: 'destructive' });
+          toast({ title: 'Error saving data', description: 'Unable to save data. Please try again or contact support.', variant: 'destructive' });
         }
       } catch (err) {
         console.error('Error saving data:', err);
