@@ -98,6 +98,7 @@ export const ContrastTable = ({
                         <input
                           type="number"
                           min="0"
+                          max={100000}
                           value={received.mls || ''}
                           onChange={(e) => onReceivedChange(type, 'mls', Number(e.target.value) || 0)}
                           className="clinical-input text-center"
@@ -114,6 +115,7 @@ export const ContrastTable = ({
                         <input
                           type="number"
                           min="0"
+                          max={1000}
                           value={received.bottles || ''}
                           onChange={(e) => onReceivedChange(type, 'bottles', Number(e.target.value) || 0)}
                           className="clinical-input text-center"
@@ -141,6 +143,7 @@ export const ContrastTable = ({
                     <input
                       type="number"
                       min="0"
+                      max={100000}
                       value={consumption[type].mls || ''}
                       onChange={(e) => onConsumptionChange(type, 'mls', Number(e.target.value) || 0)}
                       className="clinical-input text-center"
@@ -151,6 +154,7 @@ export const ContrastTable = ({
                     <input
                       type="number"
                       min="0"
+                      max={1000}
                       value={consumption[type].bottles || ''}
                       onChange={(e) => onConsumptionChange(type, 'bottles', Number(e.target.value) || 0)}
                       className="clinical-input text-center"

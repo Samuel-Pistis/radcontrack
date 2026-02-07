@@ -103,6 +103,21 @@ export const useContrastData = () => {
     });
   }, [saveToDatabase]);
 
+  // Validate numeric input
+  const validateValue = useCallback((value: number, field: 'mls' | 'bottles'): number | null => {
+    if (!Number.isFinite(value)) return null;
+    const max = field === 'mls' ? 100000 : 1000;
+    if (value < 0 || value > max) {
+      toast({
+        title: 'Invalid value',
+        description: `Value must be between 0 and ${max.toLocaleString()}`,
+        variant: 'destructive',
+      });
+      return null;
+    }
+    return value;
+  }, [toast]);
+
   // Update received values (only for morning shift)
   const updateReceived = useCallback((
     shift: ShiftType,
@@ -111,6 +126,8 @@ export const useContrastData = () => {
     value: number
   ) => {
     if (shift !== 'morning') return;
+    const validated = validateValue(value, field);
+    if (validated === null) return;
 
     updateAndSave(prev => {
       const newData = { ...prev };
@@ -122,7 +139,7 @@ export const useContrastData = () => {
       newData[shift] = shiftData;
       return newData;
     });
-  }, [calculateOutstanding, updateAndSave]);
+  }, [calculateOutstanding, updateAndSave, validateValue]);
 
   // Update consumption values
   const updateConsumption = useCallback((
@@ -131,6 +148,8 @@ export const useContrastData = () => {
     field: 'mls' | 'bottles',
     value: number
   ) => {
+    const validated = validateValue(value, field);
+    if (validated === null) return;
     updateAndSave(prev => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
@@ -149,7 +168,7 @@ export const useContrastData = () => {
       newData[shift] = shiftData;
       return newData;
     });
-  }, [calculateOutstanding, updateAndSave]);
+  }, [calculateOutstanding, updateAndSave, validateValue]);
 
   // Get received values for a shift (handles carry-over logic)
   const getReceivedValues = useCallback((shift: ShiftType, contrastType: ContrastType): ContrastValues => {
