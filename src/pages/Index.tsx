@@ -15,9 +15,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, Loader2, LogOut } from 'lucide-react';
+import { RotateCcw, Loader2, LogOut, Sun, Moon } from 'lucide-react';
 import bthdcLogo from '@/assets/bthdc-logo.png';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
@@ -36,6 +37,7 @@ export const Dashboard = () => {
     resetForm,
   } = useContrastData();
   const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleReceivedChange = (
     shift: ShiftType,
@@ -94,7 +96,16 @@ export const Dashboard = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white/70 hover:text-white hover:bg-white/10"
+                onClick={toggleTheme}
+                aria-label="Toggle dark mode"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button 
