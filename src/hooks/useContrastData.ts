@@ -89,8 +89,8 @@ export const useContrastData = () => {
   // Calculate outstanding stock
   const calculateOutstanding = useCallback((received: ContrastValues, consumption: ContrastValues): ContrastValues => {
     return {
-      mls: received.mls - consumption.mls,
-      bottles: received.bottles - consumption.bottles,
+      mls: Math.round((received.mls - consumption.mls) * 10) / 10,
+      bottles: Math.round((received.bottles - consumption.bottles) * 10) / 10,
     };
   }, []);
 
