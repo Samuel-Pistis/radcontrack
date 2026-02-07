@@ -15,8 +15,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, Loader2 } from 'lucide-react';
+import { RotateCcw, Loader2, LogOut } from 'lucide-react';
 import bthdcLogo from '@/assets/bthdc-logo.png';
+import { useAuth } from '@/hooks/useAuth';
 
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
@@ -34,6 +35,7 @@ export const Dashboard = () => {
     updateMetadata,
     resetForm,
   } = useContrastData();
+  const { signOut } = useAuth();
 
   const handleReceivedChange = (
     shift: ShiftType,
@@ -119,6 +121,15 @@ export const Dashboard = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => signOut()}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
             </div>
           </div>
         </div>
