@@ -222,6 +222,16 @@ export const Dashboard = () => {
                     Negative values appear in red. Each shift inherits the previous shift's outstanding stock.
                   </p>
                 </div>
+
+                {/* Footer Credit */}
+                <div className="text-center py-6">
+                  <p className="text-sm text-muted-foreground italic" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                    Designed and Built by Pistis
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 italic mt-0.5" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                    ©2026
+                  </p>
+                </div>
               </div>
 
               {/* Summary Sidebar */}
