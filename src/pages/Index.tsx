@@ -30,8 +30,10 @@ export const Dashboard = () => {
     data,
     isLoading,
     updateReceived,
+    updateAdditionalReceived,
     updateConsumption,
     getReceivedValues,
+    getAdditionalReceivedValues,
     getOutstandingValues,
     updateMetadata,
     resetForm,
@@ -46,6 +48,15 @@ export const Dashboard = () => {
     value: number
   ) => {
     updateReceived(shift, contrastType, field, value);
+  };
+
+  const handleAdditionalReceivedChange = (
+    shift: ShiftType,
+    contrastType: ContrastType,
+    field: 'mls' | 'bottles',
+    value: number
+  ) => {
+    updateAdditionalReceived(shift, contrastType, field, value);
   };
 
   const handleConsumptionChange = (
@@ -208,8 +219,10 @@ export const Dashboard = () => {
                     shift={shift}
                     shiftData={data[shift]}
                     getReceivedValues={getReceivedValues}
+                    getAdditionalReceivedValues={getAdditionalReceivedValues}
                     getOutstandingValues={getOutstandingValues}
                     onReceivedChange={handleReceivedChange}
+                    onAdditionalReceivedChange={handleAdditionalReceivedChange}
                     onConsumptionChange={handleConsumptionChange}
                     onMetadataChange={handleMetadataChange}
                   />

@@ -134,7 +134,53 @@ export const useContrastData = () => {
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
       contrastData.received = { ...contrastData.received, [field]: value };
-      contrastData.outstanding = calculateOutstanding(contrastData.received, contrastData.consumption);
+      const totalReceived = {
+        mls: contrastData.received.mls + (contrastData.additionalReceived?.mls || 0),
+        bottles: contrastData.received.bottles + (contrastData.additionalReceived?.bottles || 0),
+      };
+      contrastData.outstanding = calculateOutstanding(totalReceived, contrastData.consumption);
+      shiftData[contrastType] = contrastData;
+      newData[shift] = shiftData;
+      return newData;
+    });
+  }, [calculateOutstanding, updateAndSave, validateValue]);
+
+  // Update additional received values (for afternoon/night shifts)
+  const updateAdditionalReceived = useCallback((
+    shift: ShiftType,
+    contrastType: ContrastType,
+    field: 'mls' | 'bottles',
+    value: number
+  ) => {
+    if (shift === 'morning') return;
+    const validated = validateValue(value, field);
+    if (validated === null) return;
+
+    updateAndSave(prev => {
+      const newData = { ...prev };
+      const shiftData = { ...newData[shift] };
+      const contrastData = { ...shiftData[contrastType] };
+      contrastData.additionalReceived = { ...(contrastData.additionalReceived || { mls: 0, bottles: 0 }), [field]: value };
+
+      // Carried over from previous shift
+      let carriedOver: ContrastValues;
+      if (shift === 'afternoon') {
+        carriedOver = newData.morning[contrastType].outstanding;
+      } else {
+        carriedOver = newData.afternoon[contrastType].outstanding;
+      }
+
+      const totalReceived = {
+        mls: carriedOver.mls + value + (field === 'mls' ? 0 : (contrastData.additionalReceived?.mls || 0)),
+        bottles: carriedOver.bottles + value + (field === 'bottles' ? 0 : (contrastData.additionalReceived?.bottles || 0)),
+      };
+      // Simpler: just recompute properly
+      const additionalFinal = { ...contrastData.additionalReceived, [field]: value };
+      const totalReceivedFinal = {
+        mls: carriedOver.mls + additionalFinal.mls,
+        bottles: carriedOver.bottles + additionalFinal.bottles,
+      };
+      contrastData.outstanding = calculateOutstanding(totalReceivedFinal, contrastData.consumption);
       shiftData[contrastType] = contrastData;
       newData[shift] = shiftData;
       return newData;
@@ -162,16 +208,23 @@ export const useContrastData = () => {
       } else if (shift === 'night') {
         receivedValues = newData.afternoon[contrastType].outstanding;
       }
+
+      // Add additional received for non-morning shifts
+      const additional = contrastData.additionalReceived || { mls: 0, bottles: 0 };
+      const totalReceived = shift === 'morning' ? receivedValues : {
+        mls: receivedValues.mls + additional.mls,
+        bottles: receivedValues.bottles + additional.bottles,
+      };
       
-      contrastData.outstanding = calculateOutstanding(receivedValues, contrastData.consumption);
+      contrastData.outstanding = calculateOutstanding(totalReceived, contrastData.consumption);
       shiftData[contrastType] = contrastData;
       newData[shift] = shiftData;
       return newData;
     });
   }, [calculateOutstanding, updateAndSave, validateValue]);
 
-  // Get received values for a shift (handles carry-over logic)
-  const getReceivedValues = useCallback((shift: ShiftType, contrastType: ContrastType): ContrastValues => {
+  // Get carried-over values for a shift (from previous shift outstanding)
+  const getCarriedOverValues = useCallback((shift: ShiftType, contrastType: ContrastType): ContrastValues => {
     if (shift === 'morning') {
       return data.morning[contrastType].received;
     } else if (shift === 'afternoon') {
@@ -179,6 +232,22 @@ export const useContrastData = () => {
     } else {
       return data.afternoon[contrastType].outstanding;
     }
+  }, [data]);
+
+  // Get total received values for a shift (carried over + additional)
+  const getReceivedValues = useCallback((shift: ShiftType, contrastType: ContrastType): ContrastValues => {
+    const carriedOver = getCarriedOverValues(shift, contrastType);
+    if (shift === 'morning') return carriedOver;
+    const additional = data[shift][contrastType].additionalReceived || { mls: 0, bottles: 0 };
+    return {
+      mls: carriedOver.mls + additional.mls,
+      bottles: carriedOver.bottles + additional.bottles,
+    };
+  }, [data, getCarriedOverValues]);
+
+  // Get additional received values for a shift
+  const getAdditionalReceivedValues = useCallback((shift: ShiftType, contrastType: ContrastType): ContrastValues => {
+    return data[shift][contrastType].additionalReceived || { mls: 0, bottles: 0 };
   }, [data]);
 
   // Get outstanding values for a shift
@@ -216,8 +285,10 @@ export const useContrastData = () => {
     data,
     isLoading,
     updateReceived,
+    updateAdditionalReceived,
     updateConsumption,
     getReceivedValues,
+    getAdditionalReceivedValues,
     getOutstandingValues,
     updateMetadata,
     resetForm,
