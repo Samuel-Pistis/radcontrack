@@ -8,8 +8,10 @@ interface ShiftSectionProps {
   shift: ShiftType;
   shiftData: ShiftData;
   getReceivedValues: (shift: ShiftType, contrastType: ContrastType) => { mls: number; bottles: number };
+  getAdditionalReceivedValues: (shift: ShiftType, contrastType: ContrastType) => { mls: number; bottles: number };
   getOutstandingValues: (shift: ShiftType, contrastType: ContrastType) => { mls: number; bottles: number };
   onReceivedChange: (shift: ShiftType, contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
+  onAdditionalReceivedChange: (shift: ShiftType, contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onConsumptionChange: (shift: ShiftType, contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onMetadataChange: (shift: ShiftType, field: 'handedOverTo' | 'calculatedBy' | 'attestation', value: string | boolean) => void;
 }
@@ -30,8 +32,10 @@ export const ShiftSection = ({
   shift,
   shiftData,
   getReceivedValues,
+  getAdditionalReceivedValues,
   getOutstandingValues,
   onReceivedChange,
+  onAdditionalReceivedChange,
   onConsumptionChange,
   onMetadataChange,
 }: ShiftSectionProps) => {
@@ -73,6 +77,7 @@ export const ShiftSection = ({
             shift={shift}
             isMorning={isMorning}
             getReceivedValues={getReceivedValues}
+            getAdditionalReceivedValues={getAdditionalReceivedValues}
             getOutstandingValues={getOutstandingValues}
             consumption={{
               jodascan300: shiftData.jodascan300.consumption,
@@ -81,6 +86,7 @@ export const ShiftSection = ({
               mriContrast: shiftData.mriContrast.consumption,
             }}
             onReceivedChange={(type, field, value) => onReceivedChange(shift, type, field, value)}
+            onAdditionalReceivedChange={(type, field, value) => onAdditionalReceivedChange(shift, type, field, value)}
             onConsumptionChange={(type, field, value) => onConsumptionChange(shift, type, field, value)}
           />
 

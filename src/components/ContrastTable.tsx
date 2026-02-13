@@ -1,12 +1,15 @@
 import { ShiftType, ContrastType, CONTRAST_LABELS, ContrastValues } from '@/types/contrast';
+import { Plus } from 'lucide-react';
 
 interface ContrastTableProps {
   shift: ShiftType;
   isMorning: boolean;
   getReceivedValues: (shift: ShiftType, contrastType: ContrastType) => ContrastValues;
+  getAdditionalReceivedValues: (shift: ShiftType, contrastType: ContrastType) => ContrastValues;
   getOutstandingValues: (shift: ShiftType, contrastType: ContrastType) => ContrastValues;
   consumption: Record<ContrastType, ContrastValues>;
   onReceivedChange: (contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
+  onAdditionalReceivedChange: (contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onConsumptionChange: (contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
 }
 
@@ -16,9 +19,11 @@ export const ContrastTable = ({
   shift,
   isMorning,
   getReceivedValues,
+  getAdditionalReceivedValues,
   getOutstandingValues,
   consumption,
   onReceivedChange,
+  onAdditionalReceivedChange,
   onConsumptionChange,
 }: ContrastTableProps) => {
   const renderValueCell = (
@@ -85,12 +90,14 @@ export const ContrastTable = ({
                 Total Qty Received
                 {!isMorning && (
                   <span className="block text-xs text-muted-foreground mt-0.5">
-                    (Auto from previous shift)
+                    (Carried over + Additional)
                   </span>
                 )}
               </td>
               {CONTRAST_TYPES.map((type) => {
                 const received = getReceivedValues(shift, type);
+                const additional = getAdditionalReceivedValues(shift, type);
+                const hasAdditional = !isMorning && (additional.mls > 0 || additional.bottles > 0);
                 return (
                   <>
                     <td key={`${type}-received-mls`} className="p-2 border-b border-border border-l">
@@ -105,8 +112,9 @@ export const ContrastTable = ({
                           placeholder="0"
                         />
                       ) : (
-                        <div className="clinical-input clinical-input-readonly text-center">
+                        <div className={`clinical-input clinical-input-readonly text-center ${hasAdditional ? 'text-primary font-semibold' : ''}`}>
                           {received.mls}
+                          {hasAdditional && <Plus className="inline h-3 w-3 ml-0.5 text-primary" />}
                         </div>
                       )}
                     </td>
@@ -122,8 +130,9 @@ export const ContrastTable = ({
                           placeholder="0"
                         />
                       ) : (
-                        <div className="clinical-input clinical-input-readonly text-center">
+                        <div className={`clinical-input clinical-input-readonly text-center ${hasAdditional ? 'text-primary font-semibold' : ''}`}>
                           {received.bottles}
+                          {hasAdditional && <Plus className="inline h-3 w-3 ml-0.5 text-primary" />}
                         </div>
                       )}
                     </td>
@@ -131,6 +140,50 @@ export const ContrastTable = ({
                 );
               })}
             </tr>
+
+            {/* Additional Stock Received Row (afternoon/night only) */}
+            {!isMorning && (
+              <tr className="hover:bg-muted/20 transition-colors bg-primary/5">
+                <td className="p-3 text-sm font-medium text-foreground border-b border-border">
+                  <div className="flex items-center gap-1.5">
+                    <Plus className="h-4 w-4 text-primary" />
+                    <span>Additional Stock</span>
+                  </div>
+                  <span className="block text-xs text-muted-foreground mt-0.5">
+                    (Extra received this shift)
+                  </span>
+                </td>
+                {CONTRAST_TYPES.map((type) => {
+                  const additional = getAdditionalReceivedValues(shift, type);
+                  return (
+                    <>
+                      <td key={`${type}-additional-mls`} className="p-2 border-b border-border border-l">
+                        <input
+                          type="number"
+                          min="0"
+                          max={100000}
+                          value={additional.mls || ''}
+                          onChange={(e) => onAdditionalReceivedChange(type, 'mls', Number(e.target.value) || 0)}
+                          className="clinical-input text-center border-primary/30"
+                          placeholder="0"
+                        />
+                      </td>
+                      <td key={`${type}-additional-bottles`} className="p-2 border-b border-border">
+                        <input
+                          type="number"
+                          min="0"
+                          max={1000}
+                          value={additional.bottles || ''}
+                          onChange={(e) => onAdditionalReceivedChange(type, 'bottles', Number(e.target.value) || 0)}
+                          className="clinical-input text-center border-primary/30"
+                          placeholder="0"
+                        />
+                      </td>
+                    </>
+                  );
+                })}
+              </tr>
+            )}
 
             {/* Total Consumption Row */}
             <tr className="hover:bg-muted/20 transition-colors">

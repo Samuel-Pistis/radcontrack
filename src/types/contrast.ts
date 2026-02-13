@@ -9,6 +9,7 @@ export interface ContrastValues {
 
 export interface ShiftContrastData {
   received: ContrastValues;
+  additionalReceived: ContrastValues;
   consumption: ContrastValues;
   outstanding: ContrastValues;
 }
@@ -55,6 +56,7 @@ export const SHIFT_TIMES: Record<ShiftType, string> = {
 
 export const createEmptyContrastData = (): ShiftContrastData => ({
   received: { mls: 0, bottles: 0 },
+  additionalReceived: { mls: 0, bottles: 0 },
   consumption: { mls: 0, bottles: 0 },
   outstanding: { mls: 0, bottles: 0 },
 });
