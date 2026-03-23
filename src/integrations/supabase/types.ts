@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      contrast_usage_logs: {
+        Row: {
+          contrast_type: string
+          created_at: string
+          date: string
+          id: string
+          modality: string
+          patient_number: string
+          shift: string
+          updated_at: string
+          volume_ml: number
+        }
+        Insert: {
+          contrast_type: string
+          created_at?: string
+          date: string
+          id?: string
+          modality: string
+          patient_number: string
+          shift?: string
+          updated_at?: string
+          volume_ml?: number
+        }
+        Update: {
+          contrast_type?: string
+          created_at?: string
+          date?: string
+          id?: string
+          modality?: string
+          patient_number?: string
+          shift?: string
+          updated_at?: string
+          volume_ml?: number
+        }
+        Relationships: []
+      }
       daily_contrast_data: {
         Row: {
           created_at: string
