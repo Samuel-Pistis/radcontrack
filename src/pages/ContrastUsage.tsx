@@ -1,36 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Plus, Trash2, Download, ArrowLeft, Sun, Moon, FileText } from 'lucide-react';
+import { Calendar as CalendarIcon, Download, ArrowLeft, Sun, Moon, FileText, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavLink } from '@/components/NavLink';
+import { ContrastType, ShiftType, DailyData, CONTRAST_LABELS } from '@/types/contrast';
 
-const MODALITIES = ['CT', 'MRI', 'Fluoroscopy', 'Angiography'] as const;
-const CONTRAST_TYPES = [
-  { value: 'jodascan300', label: 'Jodascan 300' },
-  { value: 'hexopack350', label: 'Hexopack 350' },
-  { value: 'gastrolux', label: 'Gastrolux' },
-  { value: 'mriContrast', label: 'MRI Contrast' },
-] as const;
+type RangeMode = 'week' | 'month' | 'custom';
 
-interface UsageLog {
-  id: string;
+const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
+const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
+
+interface DailyRow {
   date: string;
-  shift: string;
-  modality: string;
-  patient_number: string;
-  contrast_type: string;
-  volume_ml: number;
+  contrastType: string;
+  contrastLabel: string;
+  totalMls: number;
+  totalBottles: number;
 }
 
 const ContrastUsage = () => {
@@ -38,113 +33,131 @@ const ContrastUsage = () => {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
 
-  const [logs, setLogs] = useState<UsageLog[]>([]);
+  const [rangeMode, setRangeMode] = useState<RangeMode>('week');
+  const [referenceDate, setReferenceDate] = useState<Date>(new Date());
+  const [filterContrast, setFilterContrast] = useState<string>('all');
+  const [rows, setRows] = useState<DailyRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter state
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined);
-  const [filterContrast, setFilterContrast] = useState<string>('all');
+  // Custom range
+  const [customStart, setCustomStart] = useState<Date | undefined>(undefined);
+  const [customEnd, setCustomEnd] = useState<Date | undefined>(undefined);
 
-  // New entry form
-  const [newDate, setNewDate] = useState<Date>(new Date());
-  const [newModality, setNewModality] = useState<string>('CT');
-  const [newPatientNumber, setNewPatientNumber] = useState('');
-  const [newContrastType, setNewContrastType] = useState<string>('jodascan300');
-  const [newVolume, setNewVolume] = useState('');
-  const [adding, setAdding] = useState(false);
+  const getDateRange = useCallback((): { start: Date; end: Date } => {
+    if (rangeMode === 'week') {
+      return {
+        start: startOfWeek(referenceDate, { weekStartsOn: 1 }),
+        end: endOfWeek(referenceDate, { weekStartsOn: 1 }),
+      };
+    }
+    if (rangeMode === 'month') {
+      return {
+        start: startOfMonth(referenceDate),
+        end: endOfMonth(referenceDate),
+      };
+    }
+    // custom
+    return {
+      start: customStart || new Date(),
+      end: customEnd || new Date(),
+    };
+  }, [rangeMode, referenceDate, customStart, customEnd]);
 
-  const fetchLogs = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    let query = supabase
-      .from('contrast_usage_logs')
-      .select('*')
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
+    const { start, end } = getDateRange();
+    const startKey = format(start, 'yyyy-MM-dd');
+    const endKey = format(end, 'yyyy-MM-dd');
 
-    if (filterDate) {
-      query = query.eq('date', format(filterDate, 'yyyy-MM-dd'));
-    }
-    if (filterContrast && filterContrast !== 'all') {
-      query = query.eq('contrast_type', filterContrast);
-    }
+    const { data, error } = await supabase
+      .from('daily_contrast_data')
+      .select('date, data')
+      .gte('date', startKey)
+      .lte('date', endKey)
+      .order('date', { ascending: true });
 
-    const { data, error } = await query;
     if (error) {
-      toast({ title: 'Error', description: 'Failed to load usage logs', variant: 'destructive' });
-    } else {
-      setLogs((data as UsageLog[]) || []);
-    }
-    setLoading(false);
-  }, [filterDate, filterContrast, toast]);
-
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
-
-  const handleAdd = async () => {
-    if (!newPatientNumber.trim() || !newVolume.trim()) {
-      toast({ title: 'Missing fields', description: 'Patient number and volume are required', variant: 'destructive' });
-      return;
-    }
-    const vol = parseFloat(newVolume);
-    if (isNaN(vol) || vol <= 0) {
-      toast({ title: 'Invalid volume', description: 'Volume must be a positive number', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to load data', variant: 'destructive' });
+      setLoading(false);
       return;
     }
 
-    setAdding(true);
-    const { error } = await supabase.from('contrast_usage_logs').insert({
-      date: format(newDate, 'yyyy-MM-dd'),
-      modality: newModality,
-      patient_number: newPatientNumber.trim(),
-      contrast_type: newContrastType,
-      volume_ml: Math.round(vol * 10) / 10,
+    const result: DailyRow[] = [];
+
+    (data || []).forEach((record) => {
+      const dailyData = record.data as unknown as DailyData;
+      if (!dailyData) return;
+
+      CONTRAST_TYPES.forEach((ct) => {
+        let totalMls = 0;
+        let totalBottles = 0;
+
+        SHIFTS.forEach((shift) => {
+          const shiftData = dailyData[shift];
+          if (shiftData && shiftData[ct]) {
+            totalMls += Number(shiftData[ct].consumption?.mls || 0);
+            totalBottles += Number(shiftData[ct].consumption?.bottles || 0);
+          }
+        });
+
+        if (totalMls > 0 || totalBottles > 0) {
+          result.push({
+            date: record.date,
+            contrastType: ct,
+            contrastLabel: CONTRAST_LABELS[ct],
+            totalMls: Math.round(totalMls * 10) / 10,
+            totalBottles: Math.round(totalBottles * 10) / 10,
+          });
+        }
+      });
     });
 
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to add entry', variant: 'destructive' });
-    } else {
-      setNewPatientNumber('');
-      setNewVolume('');
-      fetchLogs();
-      toast({ title: 'Entry added' });
-    }
-    setAdding(false);
-  };
+    // Apply contrast filter
+    const filtered = filterContrast === 'all'
+      ? result
+      : result.filter(r => r.contrastType === filterContrast);
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('contrast_usage_logs').delete().eq('id', id);
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to delete entry', variant: 'destructive' });
-    } else {
-      fetchLogs();
-    }
-  };
+    setRows(filtered);
+    setLoading(false);
+  }, [getDateRange, filterContrast, toast]);
 
-  const totalVolume = logs.reduce((sum, l) => sum + Number(l.volume_ml), 0);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const grandTotalMls = Math.round(rows.reduce((s, r) => s + r.totalMls, 0) * 10) / 10;
+  const grandTotalBottles = Math.round(rows.reduce((s, r) => s + r.totalBottles, 0) * 10) / 10;
+
+  // Summary by contrast type
+  const summaryByType = CONTRAST_TYPES.map(ct => {
+    const typeRows = rows.filter(r => r.contrastType === ct);
+    return {
+      type: ct,
+      label: CONTRAST_LABELS[ct],
+      totalMls: Math.round(typeRows.reduce((s, r) => s + r.totalMls, 0) * 10) / 10,
+      totalBottles: Math.round(typeRows.reduce((s, r) => s + r.totalBottles, 0) * 10) / 10,
+    };
+  }).filter(s => s.totalMls > 0 || s.totalBottles > 0);
+
+  const { start, end } = getDateRange();
+  const rangeLabel = `${format(start, 'dd MMM yyyy')} – ${format(end, 'dd MMM yyyy')}`;
 
   const exportCSV = () => {
-    if (logs.length === 0) return;
-    const header = 'Date,Modality,Patient Number,Contrast Type,Volume (ml)\n';
-    const rows = logs.map(l => {
-      const ctLabel = CONTRAST_TYPES.find(c => c.value === l.contrast_type)?.label || l.contrast_type;
-      return `${l.date},${l.modality},${l.patient_number},${ctLabel},${l.volume_ml}`;
-    }).join('\n');
-    const totalRow = `\nTotal,,,,${Math.round(totalVolume * 10) / 10}`;
-    const blob = new Blob([header + rows + totalRow], { type: 'text/csv' });
+    if (rows.length === 0) return;
+    const header = 'Date,Contrast Type,Volume (ml),Bottles\n';
+    const csvRows = rows.map(r => `${r.date},${r.contrastLabel},${r.totalMls},${r.totalBottles}`).join('\n');
+    const totalRow = `\nTotal,,${grandTotalMls},${grandTotalBottles}`;
+    const blob = new Blob([header + csvRows + totalRow], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `contrast-usage-${filterDate ? format(filterDate, 'yyyy-MM-dd') : 'all'}.csv`;
+    a.download = `contrast-report-${format(start, 'yyyyMMdd')}-${format(end, 'yyyyMMdd')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const contrastLabel = (val: string) => CONTRAST_TYPES.find(c => c.value === val)?.label || val;
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
       <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -167,146 +180,151 @@ const ContrastUsage = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Add Entry */}
+        {/* Date Range Selection */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Log Contrast Usage
+              <BarChart3 className="h-4 w-4" /> Generate Report
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 items-end">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left font-normal text-xs')}>
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {format(newDate, 'dd/MM/yyyy')}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={newDate} onSelect={(d) => d && setNewDate(d)} initialFocus />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Modality</label>
-                <Select value={newModality} onValueChange={setNewModality}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MODALITIES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Patient #</label>
-                <Input className="h-9 text-xs" placeholder="e.g. PT001" value={newPatientNumber} onChange={e => setNewPatientNumber(e.target.value)} />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Contrast Type</label>
-                <Select value={newContrastType} onValueChange={setNewContrastType}>
-                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CONTRAST_TYPES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Volume (ml)</label>
-                <Input className="h-9 text-xs" type="number" min="0" step="0.1" placeholder="ml" value={newVolume} onChange={e => setNewVolume(e.target.value)} />
-              </div>
-              <Button size="sm" className="h-9" onClick={handleAdd} disabled={adding}>
-                <Plus className="h-3 w-3 mr-1" /> Add
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-4">
             <div className="flex flex-wrap gap-3 items-end">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Filter by Date</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-[160px] justify-start text-left font-normal text-xs', !filterDate && 'text-muted-foreground')}>
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {filterDate ? format(filterDate, 'dd/MM/yyyy') : 'All dates'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={filterDate} onSelect={setFilterDate} initialFocus />
-                  </PopoverContent>
-                </Popover>
+                <label className="text-xs text-muted-foreground mb-1 block">Period</label>
+                <Select value={rangeMode} onValueChange={(v) => setRangeMode(v as RangeMode)}>
+                  <SelectTrigger className="h-9 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {rangeMode !== 'custom' && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Reference Date</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-[160px] justify-start text-left font-normal text-xs">
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {format(referenceDate, 'dd/MM/yyyy')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={referenceDate} onSelect={(d) => d && setReferenceDate(d)} initialFocus className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
+
+              {rangeMode === 'custom' && (
+                <>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Start Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className={cn('w-[160px] justify-start text-left font-normal text-xs', !customStart && 'text-muted-foreground')}>
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          {customStart ? format(customStart, 'dd/MM/yyyy') : 'Pick start'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={customStart} onSelect={setCustomStart} initialFocus className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">End Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className={cn('w-[160px] justify-start text-left font-normal text-xs', !customEnd && 'text-muted-foreground')}>
+                          <CalendarIcon className="mr-1 h-3 w-3" />
+                          {customEnd ? format(customEnd, 'dd/MM/yyyy') : 'Pick end'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={customEnd} onSelect={setCustomEnd} initialFocus className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </>
+              )}
+
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Filter by Contrast</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Contrast Type</label>
                 <Select value={filterContrast} onValueChange={setFilterContrast}>
                   <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    {CONTRAST_TYPES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                    {CONTRAST_TYPES.map(ct => (
+                      <SelectItem key={ct} value={ct}>{CONTRAST_LABELS[ct]}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              {(filterDate || filterContrast !== 'all') && (
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setFilterDate(undefined); setFilterContrast('all'); }}>
-                  Clear Filters
-                </Button>
-              )}
+
               <div className="ml-auto">
-                <Button variant="outline" size="sm" onClick={exportCSV} disabled={logs.length === 0}>
+                <Button variant="outline" size="sm" onClick={exportCSV} disabled={rows.length === 0}>
                   <Download className="h-3 w-3 mr-1" /> Export CSV
                 </Button>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Showing: <span className="font-medium text-foreground">{rangeLabel}</span>
+            </p>
           </CardContent>
         </Card>
 
-        {/* Table */}
+        {/* Summary Cards */}
+        {summaryByType.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {summaryByType.map(s => (
+              <Card key={s.type}>
+                <CardContent className="pt-4 pb-3 px-4">
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <p className="text-xl font-bold text-foreground">{s.totalMls} <span className="text-xs font-normal text-muted-foreground">ml</span></p>
+                  <p className="text-xs text-muted-foreground">{s.totalBottles} bottles</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Detail Table */}
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Date</TableHead>
-                  <TableHead className="text-xs">Modality</TableHead>
-                  <TableHead className="text-xs">Patient #</TableHead>
                   <TableHead className="text-xs">Contrast Type</TableHead>
                   <TableHead className="text-xs text-right">Volume (ml)</TableHead>
-                  <TableHead className="text-xs w-10"></TableHead>
+                  <TableHead className="text-xs text-right">Bottles</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
-                ) : logs.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No entries found</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+                ) : rows.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No consumption data for this period</TableCell></TableRow>
                 ) : (
-                  logs.map(log => (
-                    <TableRow key={log.id}>
-                      <TableCell className="text-xs">{log.date}</TableCell>
-                      <TableCell className="text-xs font-medium">{log.modality}</TableCell>
-                      <TableCell className="text-xs">{log.patient_number}</TableCell>
-                      <TableCell className="text-xs">{contrastLabel(log.contrast_type)}</TableCell>
-                      <TableCell className="text-xs text-right font-mono">{Number(log.volume_ml).toFixed(1)}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(log.id)}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
-                      </TableCell>
+                  rows.map((row, i) => (
+                    <TableRow key={`${row.date}-${row.contrastType}-${i}`}>
+                      <TableCell className="text-xs">{row.date}</TableCell>
+                      <TableCell className="text-xs font-medium">{row.contrastLabel}</TableCell>
+                      <TableCell className="text-xs text-right font-mono">{row.totalMls.toFixed(1)}</TableCell>
+                      <TableCell className="text-xs text-right font-mono">{row.totalBottles.toFixed(1)}</TableCell>
                     </TableRow>
                   ))
                 )}
               </TableBody>
-              {logs.length > 0 && (
+              {rows.length > 0 && (
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={4} className="text-xs font-bold">Total</TableCell>
-                    <TableCell className="text-xs text-right font-bold font-mono">{totalVolume.toFixed(1)}</TableCell>
-                    <TableCell />
+                    <TableCell colSpan={2} className="text-xs font-bold">Grand Total</TableCell>
+                    <TableCell className="text-xs text-right font-bold font-mono">{grandTotalMls.toFixed(1)}</TableCell>
+                    <TableCell className="text-xs text-right font-bold font-mono">{grandTotalBottles.toFixed(1)}</TableCell>
                   </TableRow>
                 </TableFooter>
               )}
