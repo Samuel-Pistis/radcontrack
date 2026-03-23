@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ContrastUsage from "./pages/ContrastUsage";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
