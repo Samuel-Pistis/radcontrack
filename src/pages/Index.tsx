@@ -15,10 +15,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, Loader2, LogOut, Sun, Moon } from 'lucide-react';
+import { RotateCcw, Loader2, LogOut, Sun, Moon, FileText } from 'lucide-react';
 import bthdcLogo from '@/assets/bthdc-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { NavLink } from '@/components/NavLink';
 
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
@@ -108,6 +109,10 @@ export const Dashboard = () => {
             </div>
 
             <div className="flex items-center gap-1">
+              <NavLink to="/usage" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Usage Report</span>
+              </NavLink>
               <Button
                 variant="ghost"
                 size="sm"
