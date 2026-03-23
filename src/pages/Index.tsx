@@ -15,10 +15,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, Loader2, LogOut, Sun, Moon } from 'lucide-react';
+import { RotateCcw, Loader2, LogOut, Sun, Moon, FileText } from 'lucide-react';
 import bthdcLogo from '@/assets/bthdc-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { NavLink } from '@/components/NavLink';
 
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
