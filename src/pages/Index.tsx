@@ -109,6 +109,10 @@ export const Dashboard = () => {
             </div>
 
             <div className="flex items-center gap-1">
+              <NavLink to="/usage" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Usage Report</span>
+              </NavLink>
               <Button
                 variant="ghost"
                 size="sm"
