@@ -12,6 +12,7 @@ export interface ShiftContrastData {
   additionalReceived: ContrastValues;
   consumption: ContrastValues;
   outstanding: ContrastValues;
+  patients: number;
 }
 
 export interface ShiftMetadata {
@@ -59,6 +60,7 @@ export const createEmptyContrastData = (): ShiftContrastData => ({
   additionalReceived: { mls: 0, bottles: 0 },
   consumption: { mls: 0, bottles: 0 },
   outstanding: { mls: 0, bottles: 0 },
+  patients: 0,
 });
 
 export const createEmptyShiftData = (): ShiftData => ({
