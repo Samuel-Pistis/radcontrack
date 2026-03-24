@@ -222,7 +222,27 @@ export const ContrastTable = ({
               ))}
             </tr>
 
-            {/* Outstanding Stock Row */}
+            {/* Number of Patients Row */}
+            <tr className="hover:bg-muted/20 transition-colors bg-accent/10">
+              <td className="p-3 text-sm font-medium text-foreground border-b border-border">
+                No. of Patients
+              </td>
+              {CONTRAST_TYPES.map((type) => (
+                <>
+                  <td key={`${type}-patients`} colSpan={2} className="p-2 border-b border-border border-l">
+                    <input
+                      type="number"
+                      min="0"
+                      max={10000}
+                      value={patients[type] || ''}
+                      onChange={(e) => onPatientsChange(type, Number(e.target.value) || 0)}
+                      className="clinical-input text-center"
+                      placeholder="0"
+                    />
+                  </td>
+                </>
+              ))}
+            </tr>
             <tr className="bg-accent/30 hover:bg-accent/40 transition-colors">
               <td className="p-3 text-sm font-bold text-foreground border-b border-border">
                 Outstanding Stock
