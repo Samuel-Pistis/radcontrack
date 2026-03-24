@@ -8,9 +8,11 @@ interface ContrastTableProps {
   getAdditionalReceivedValues: (shift: ShiftType, contrastType: ContrastType) => ContrastValues;
   getOutstandingValues: (shift: ShiftType, contrastType: ContrastType) => ContrastValues;
   consumption: Record<ContrastType, ContrastValues>;
+  patients: Record<ContrastType, number>;
   onReceivedChange: (contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onAdditionalReceivedChange: (contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onConsumptionChange: (contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
+  onPatientsChange: (contrastType: ContrastType, value: number) => void;
 }
 
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
@@ -22,9 +24,11 @@ export const ContrastTable = ({
   getAdditionalReceivedValues,
   getOutstandingValues,
   consumption,
+  patients,
   onReceivedChange,
   onAdditionalReceivedChange,
   onConsumptionChange,
+  onPatientsChange,
 }: ContrastTableProps) => {
   const renderValueCell = (
     value: number,
