@@ -13,6 +13,7 @@ interface ShiftSectionProps {
   onReceivedChange: (shift: ShiftType, contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onAdditionalReceivedChange: (shift: ShiftType, contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
   onConsumptionChange: (shift: ShiftType, contrastType: ContrastType, field: 'mls' | 'bottles', value: number) => void;
+  onPatientsChange: (shift: ShiftType, contrastType: ContrastType, value: number) => void;
   onMetadataChange: (shift: ShiftType, field: 'handedOverTo' | 'calculatedBy' | 'attestation', value: string | boolean) => void;
 }
 
@@ -37,6 +38,7 @@ export const ShiftSection = ({
   onReceivedChange,
   onAdditionalReceivedChange,
   onConsumptionChange,
+  onPatientsChange,
   onMetadataChange,
 }: ShiftSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -85,9 +87,16 @@ export const ShiftSection = ({
               gastrolux: shiftData.gastrolux.consumption,
               mriContrast: shiftData.mriContrast.consumption,
             }}
+            patients={{
+              jodascan300: shiftData.jodascan300.patients || 0,
+              hexopack350: shiftData.hexopack350.patients || 0,
+              gastrolux: shiftData.gastrolux.patients || 0,
+              mriContrast: shiftData.mriContrast.patients || 0,
+            }}
             onReceivedChange={(type, field, value) => onReceivedChange(shift, type, field, value)}
             onAdditionalReceivedChange={(type, field, value) => onAdditionalReceivedChange(shift, type, field, value)}
             onConsumptionChange={(type, field, value) => onConsumptionChange(shift, type, field, value)}
+            onPatientsChange={(type, value) => onPatientsChange(shift, type, value)}
           />
 
           <ShiftMetadata
