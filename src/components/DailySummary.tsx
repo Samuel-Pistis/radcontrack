@@ -121,13 +121,17 @@ export const DailySummary = ({ data }: DailySummaryProps) => {
             {(totalReceived - totalConsumed).toLocaleString()} mls
           </span>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Total Patients</span>
-          <span className="font-semibold text-foreground">
-            {CONTRAST_TYPES.reduce((sum, type) => {
-              return sum + (data.morning[type].patients || 0) + (data.afternoon[type].patients || 0) + (data.night[type].patients || 0);
-            }, 0)}
-          </span>
+        <div className="space-y-1">
+          <span className="text-xs text-muted-foreground font-medium">Patients by Type</span>
+          {CONTRAST_TYPES.map((type) => {
+            const count = (data.morning[type].patients || 0) + (data.afternoon[type].patients || 0) + (data.night[type].patients || 0);
+            return (
+              <div key={type} className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{CONTRAST_LABELS[type]}</span>
+                <span className="font-semibold text-foreground">{count}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
