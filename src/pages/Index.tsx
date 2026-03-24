@@ -33,6 +33,7 @@ export const Dashboard = () => {
     updateReceived,
     updateAdditionalReceived,
     updateConsumption,
+    updatePatients,
     getReceivedValues,
     getAdditionalReceivedValues,
     getOutstandingValues,
@@ -67,6 +68,14 @@ export const Dashboard = () => {
     value: number
   ) => {
     updateConsumption(shift, contrastType, field, value);
+  };
+
+  const handlePatientsChange = (
+    shift: ShiftType,
+    contrastType: ContrastType,
+    value: number
+  ) => {
+    updatePatients(shift, contrastType, value);
   };
 
   const handleMetadataChange = (
@@ -226,10 +235,11 @@ export const Dashboard = () => {
                     getReceivedValues={getReceivedValues}
                     getAdditionalReceivedValues={getAdditionalReceivedValues}
                     getOutstandingValues={getOutstandingValues}
-                    onReceivedChange={handleReceivedChange}
-                    onAdditionalReceivedChange={handleAdditionalReceivedChange}
-                    onConsumptionChange={handleConsumptionChange}
-                    onMetadataChange={handleMetadataChange}
+                     onReceivedChange={handleReceivedChange}
+                     onAdditionalReceivedChange={handleAdditionalReceivedChange}
+                     onConsumptionChange={handleConsumptionChange}
+                     onPatientsChange={handlePatientsChange}
+                     onMetadataChange={handleMetadataChange}
                   />
                 ))}
 

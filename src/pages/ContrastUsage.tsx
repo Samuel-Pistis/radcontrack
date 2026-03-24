@@ -26,6 +26,7 @@ interface DailyRow {
   contrastLabel: string;
   totalMls: number;
   totalBottles: number;
+  totalPatients: number;
 }
 
 const ContrastUsage = () => {
@@ -91,22 +92,25 @@ const ContrastUsage = () => {
       CONTRAST_TYPES.forEach((ct) => {
         let totalMls = 0;
         let totalBottles = 0;
+        let totalPatients = 0;
 
         SHIFTS.forEach((shift) => {
           const shiftData = dailyData[shift];
           if (shiftData && shiftData[ct]) {
             totalMls += Number(shiftData[ct].consumption?.mls || 0);
             totalBottles += Number(shiftData[ct].consumption?.bottles || 0);
+            totalPatients += Number(shiftData[ct].patients || 0);
           }
         });
 
-        if (totalMls > 0 || totalBottles > 0) {
+        if (totalMls > 0 || totalBottles > 0 || totalPatients > 0) {
           result.push({
             date: record.date,
             contrastType: ct,
             contrastLabel: CONTRAST_LABELS[ct],
             totalMls: Math.round(totalMls * 10) / 10,
             totalBottles: Math.round(totalBottles * 10) / 10,
+            totalPatients,
           });
         }
       });
@@ -127,6 +131,7 @@ const ContrastUsage = () => {
 
   const grandTotalMls = Math.round(rows.reduce((s, r) => s + r.totalMls, 0) * 10) / 10;
   const grandTotalBottles = Math.round(rows.reduce((s, r) => s + r.totalBottles, 0) * 10) / 10;
+  const grandTotalPatients = rows.reduce((s, r) => s + r.totalPatients, 0);
 
   // Summary by contrast type
   const summaryByType = CONTRAST_TYPES.map(ct => {
@@ -136,17 +141,18 @@ const ContrastUsage = () => {
       label: CONTRAST_LABELS[ct],
       totalMls: Math.round(typeRows.reduce((s, r) => s + r.totalMls, 0) * 10) / 10,
       totalBottles: Math.round(typeRows.reduce((s, r) => s + r.totalBottles, 0) * 10) / 10,
+      totalPatients: typeRows.reduce((s, r) => s + r.totalPatients, 0),
     };
-  }).filter(s => s.totalMls > 0 || s.totalBottles > 0);
+  }).filter(s => s.totalMls > 0 || s.totalBottles > 0 || s.totalPatients > 0);
 
   const { start, end } = getDateRange();
   const rangeLabel = `${format(start, 'dd MMM yyyy')} – ${format(end, 'dd MMM yyyy')}`;
 
   const exportCSV = () => {
     if (rows.length === 0) return;
-    const header = 'Date,Contrast Type,Volume (ml),Bottles\n';
-    const csvRows = rows.map(r => `${r.date},${r.contrastLabel},${r.totalMls},${r.totalBottles}`).join('\n');
-    const totalRow = `\nTotal,,${grandTotalMls},${grandTotalBottles}`;
+    const header = 'Date,Contrast Type,Volume (ml),Bottles,Patients\n';
+    const csvRows = rows.map(r => `${r.date},${r.contrastLabel},${r.totalMls},${r.totalBottles},${r.totalPatients}`).join('\n');
+    const totalRow = `\nTotal,,${grandTotalMls},${grandTotalBottles},${grandTotalPatients}`;
     const blob = new Blob([header + csvRows + totalRow], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -284,7 +290,7 @@ const ContrastUsage = () => {
                 <CardContent className="pt-4 pb-3 px-4">
                   <p className="text-xs text-muted-foreground">{s.label}</p>
                   <p className="text-xl font-bold text-foreground">{s.totalMls} <span className="text-xs font-normal text-muted-foreground">ml</span></p>
-                  <p className="text-xs text-muted-foreground">{s.totalBottles} bottles</p>
+                  <p className="text-xs text-muted-foreground">{s.totalBottles} bottles · {s.totalPatients} patients</p>
                 </CardContent>
               </Card>
             ))}
@@ -301,13 +307,14 @@ const ContrastUsage = () => {
                   <TableHead className="text-xs">Contrast Type</TableHead>
                   <TableHead className="text-xs text-right">Volume (ml)</TableHead>
                   <TableHead className="text-xs text-right">Bottles</TableHead>
+                  <TableHead className="text-xs text-right">Patients</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Loading...</TableCell></TableRow>
                 ) : rows.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No consumption data for this period</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No consumption data for this period</TableCell></TableRow>
                 ) : (
                   rows.map((row, i) => (
                     <TableRow key={`${row.date}-${row.contrastType}-${i}`}>
@@ -315,6 +322,7 @@ const ContrastUsage = () => {
                       <TableCell className="text-xs font-medium">{row.contrastLabel}</TableCell>
                       <TableCell className="text-xs text-right font-mono">{row.totalMls.toFixed(1)}</TableCell>
                       <TableCell className="text-xs text-right font-mono">{row.totalBottles.toFixed(1)}</TableCell>
+                      <TableCell className="text-xs text-right font-mono">{row.totalPatients}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -325,6 +333,7 @@ const ContrastUsage = () => {
                     <TableCell colSpan={2} className="text-xs font-bold">Grand Total</TableCell>
                     <TableCell className="text-xs text-right font-bold font-mono">{grandTotalMls.toFixed(1)}</TableCell>
                     <TableCell className="text-xs text-right font-bold font-mono">{grandTotalBottles.toFixed(1)}</TableCell>
+                    <TableCell className="text-xs text-right font-bold font-mono">{grandTotalPatients}</TableCell>
                   </TableRow>
                 </TableFooter>
               )}
