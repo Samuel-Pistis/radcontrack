@@ -272,6 +272,24 @@ export const useContrastData = () => {
     });
   }, [updateAndSave]);
 
+  // Update patient count
+  const updatePatients = useCallback((
+    shift: ShiftType,
+    contrastType: ContrastType,
+    value: number
+  ) => {
+    if (!Number.isFinite(value) || value < 0 || value > 10000) return;
+    updateAndSave(prev => {
+      const newData = { ...prev };
+      const shiftData = { ...newData[shift] };
+      const contrastData = { ...shiftData[contrastType] };
+      contrastData.patients = value;
+      shiftData[contrastType] = contrastData;
+      newData[shift] = shiftData;
+      return newData;
+    });
+  }, [updateAndSave]);
+
   // Reset form
   const resetForm = useCallback(() => {
     const emptyData = createEmptyDailyData(dateKey);
@@ -287,6 +305,7 @@ export const useContrastData = () => {
     updateReceived,
     updateAdditionalReceived,
     updateConsumption,
+    updatePatients,
     getReceivedValues,
     getAdditionalReceivedValues,
     getOutstandingValues,
