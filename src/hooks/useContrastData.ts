@@ -9,6 +9,16 @@ import {
 } from '@/types/contrast';
 import { useToast } from '@/hooks/use-toast';
 
+// MRI Contrast: 15ml = 1 bottle
+const MRI_ML_PER_BOTTLE = 15;
+
+const autoConvertMri = (field: 'mls' | 'bottles', value: number): { mls: number; bottles: number } => {
+  if (field === 'mls') {
+    return { mls: value, bottles: Math.round((value / MRI_ML_PER_BOTTLE) * 10) / 10 };
+  }
+  return { mls: Math.round(value * MRI_ML_PER_BOTTLE * 10) / 10, bottles: value };
+};
+
 export const useContrastData = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [data, setData] = useState<DailyData>(() => {
