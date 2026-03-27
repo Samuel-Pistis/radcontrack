@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ContrastUsage from "./pages/ContrastUsage";
+import WeeklyTrend from "./pages/WeeklyTrend";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -57,6 +58,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/usage" element={<ProtectedRoute><ContrastUsage /></ProtectedRoute>} />
+          <Route path="/weekly-trend" element={<ProtectedRoute><WeeklyTrend /></ProtectedRoute>} />
           <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
