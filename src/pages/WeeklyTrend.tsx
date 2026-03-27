@@ -132,8 +132,8 @@ const WeeklyTrend = () => {
             if (!ctData) return;
             const mls = Number(ctData.consumption?.mls || 0);
             const patients = Number(ctData.patients || 0);
-            agg[`${ct}Mls` as keyof DayAggregation] = (agg[`${ct}Mls` as keyof DayAggregation] as number) + mls;
-            agg[`${ct}Patients` as keyof DayAggregation] = (agg[`${ct}Patients` as keyof DayAggregation] as number) + patients;
+            (agg as any)[`${ct}Mls`] += mls;
+            (agg as any)[`${ct}Patients`] += patients;
             agg.totalMls += mls;
             agg.totalPatients += patients;
           });
