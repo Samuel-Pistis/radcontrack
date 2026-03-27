@@ -52,17 +52,17 @@ export const ShiftSection = ({
         className={`w-full flex items-center justify-between p-5 ${shiftHeaderStyles[shift]} transition-all duration-200 hover:bg-secondary/30`}
       >
         <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+          <div className="p-2.5 bg-black/10 rounded-xl text-inherit">
             {shiftIcons[shift]}
           </div>
           <div className="text-left">
-            <h2 className="text-lg font-semibold text-foreground">{SHIFT_LABELS[shift]}</h2>
-            <p className="text-sm text-muted-foreground">{SHIFT_TIMES[shift]}</p>
+            <h2 className="text-lg font-semibold">{SHIFT_LABELS[shift]}</h2>
+            <p className="text-sm opacity-70">{SHIFT_TIMES[shift]}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {shiftData.metadata.attestation && (
-            <span className="px-3 py-1.5 text-xs font-medium bg-primary/15 text-primary rounded-full">
+            <span className="px-3 py-1.5 text-xs font-medium bg-black/10 rounded-full">
               ✓ Verified
             </span>
           )}
