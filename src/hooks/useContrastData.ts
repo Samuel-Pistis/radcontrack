@@ -143,7 +143,12 @@ export const useContrastData = () => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
-      contrastData.received = { ...contrastData.received, [field]: value };
+      if (contrastType === 'mriContrast') {
+        const converted = autoConvertMri(field, value);
+        contrastData.received = { ...contrastData.received, ...converted };
+      } else {
+        contrastData.received = { ...contrastData.received, [field]: value };
+      }
       const totalReceived = {
         mls: contrastData.received.mls + (contrastData.additionalReceived?.mls || 0),
         bottles: contrastData.received.bottles + (contrastData.additionalReceived?.bottles || 0),
@@ -170,9 +175,13 @@ export const useContrastData = () => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
-      contrastData.additionalReceived = { ...(contrastData.additionalReceived || { mls: 0, bottles: 0 }), [field]: value };
+      if (contrastType === 'mriContrast') {
+        const converted = autoConvertMri(field, value);
+        contrastData.additionalReceived = { ...(contrastData.additionalReceived || { mls: 0, bottles: 0 }), ...converted };
+      } else {
+        contrastData.additionalReceived = { ...(contrastData.additionalReceived || { mls: 0, bottles: 0 }), [field]: value };
+      }
 
-      // Carried over from previous shift
       let carriedOver: ContrastValues;
       if (shift === 'afternoon') {
         carriedOver = newData.morning[contrastType].outstanding;
@@ -180,12 +189,7 @@ export const useContrastData = () => {
         carriedOver = newData.afternoon[contrastType].outstanding;
       }
 
-      const totalReceived = {
-        mls: carriedOver.mls + value + (field === 'mls' ? 0 : (contrastData.additionalReceived?.mls || 0)),
-        bottles: carriedOver.bottles + value + (field === 'bottles' ? 0 : (contrastData.additionalReceived?.bottles || 0)),
-      };
-      // Simpler: just recompute properly
-      const additionalFinal = { ...contrastData.additionalReceived, [field]: value };
+      const additionalFinal = contrastData.additionalReceived;
       const totalReceivedFinal = {
         mls: carriedOver.mls + additionalFinal.mls,
         bottles: carriedOver.bottles + additionalFinal.bottles,
@@ -210,7 +214,12 @@ export const useContrastData = () => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
-      contrastData.consumption = { ...contrastData.consumption, [field]: value };
+      if (contrastType === 'mriContrast') {
+        const converted = autoConvertMri(field, value);
+        contrastData.consumption = { ...contrastData.consumption, ...converted };
+      } else {
+        contrastData.consumption = { ...contrastData.consumption, [field]: value };
+      }
       
       let receivedValues = contrastData.received;
       if (shift === 'afternoon') {
@@ -219,7 +228,6 @@ export const useContrastData = () => {
         receivedValues = newData.afternoon[contrastType].outstanding;
       }
 
-      // Add additional received for non-morning shifts
       const additional = contrastData.additionalReceived || { mls: 0, bottles: 0 };
       const totalReceived = shift === 'morning' ? receivedValues : {
         mls: receivedValues.mls + additional.mls,
