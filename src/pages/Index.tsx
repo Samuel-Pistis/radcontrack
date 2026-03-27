@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, Loader2, LogOut, Sun, Moon, FileText } from 'lucide-react';
+import { RotateCcw, Loader2, LogOut, Sun, Moon, FileText, TrendingUp } from 'lucide-react';
 import bthdcLogo from '@/assets/bthdc-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -121,6 +121,10 @@ export const Dashboard = () => {
               <NavLink to="/usage" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
                 <FileText className="h-4 w-4" />
                 <span className="hidden sm:inline">Usage Report</span>
+              </NavLink>
+              <NavLink to="/weekly-trend" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
+                <TrendingUp className="h-4 w-4" />
+                <span className="hidden sm:inline">Weekly Trend</span>
               </NavLink>
               <Button
                 variant="ghost"
