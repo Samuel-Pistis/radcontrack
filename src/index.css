@@ -137,15 +137,15 @@
   
   /* Shift header styles */
   .shift-morning {
-    @apply bg-amber-50/80 border-amber-200/40;
+    @apply bg-amber-100 border-b border-amber-300 text-amber-950;
   }
   
   .shift-afternoon {
-    @apply bg-orange-50/60 border-orange-200/30;
+    @apply bg-orange-100 border-b border-orange-300 text-orange-950;
   }
   
   .shift-night {
-    @apply bg-indigo-50/50 border-indigo-200/30;
+    @apply bg-indigo-100 border-b border-indigo-300 text-indigo-950;
   }
 
   /* Dashboard nav */
