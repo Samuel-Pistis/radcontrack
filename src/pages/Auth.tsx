@@ -46,7 +46,7 @@ const Auth = () => {
       <div className="dashboard-card p-8 w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3">
           <img src={bthdcLogo} alt="BTHDC Logo" className="h-14 w-14 object-contain rounded-xl bg-primary/10 p-1.5" />
-          <h1 className="text-xl font-bold text-foreground">Radiology Contrast Tracker</h1>
+          <h1 className="text-xl font-bold text-foreground">Radiology Operations & Inventory</h1>
           <p className="text-sm text-muted-foreground">Sign in to continue</p>
         </div>
 

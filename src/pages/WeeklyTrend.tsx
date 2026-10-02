@@ -172,12 +172,12 @@ const WeeklyTrend = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <img src={bthdcLogo} alt="BTHDC Logo" className="h-9 w-9 object-contain rounded-lg bg-white/10 p-0.5" />
-              <span className="text-base font-bold tracking-tight text-white">Weekly Trend Report</span>
+              <span className="text-base font-bold tracking-tight text-white">Contrast Trend Report</span>
             </div>
             <div className="flex items-center gap-1">
               <NavLink to="/" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
                 <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <span className="hidden sm:inline">Daily Log</span>
               </NavLink>
               <NavLink to="/usage" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
                 <FileText className="h-4 w-4" />

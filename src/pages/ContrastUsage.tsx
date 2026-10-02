@@ -14,6 +14,7 @@ import { Calendar as CalendarIcon, Download, ArrowLeft, Sun, Moon, FileText, Bar
 import { cn } from '@/lib/utils';
 import { NavLink } from '@/components/NavLink';
 import { ContrastType, ShiftType, DailyData, CONTRAST_LABELS } from '@/types/contrast';
+import { FilmAndStoreReport } from '@/components/FilmAndStoreReport';
 
 type RangeMode = 'week' | 'month' | 'custom';
 
@@ -130,7 +131,6 @@ const ContrastUsage = () => {
   }, [fetchData]);
 
   const grandTotalMls = Math.round(rows.reduce((s, r) => s + r.totalMls, 0) * 10) / 10;
-  const grandTotalBottles = Math.round(rows.reduce((s, r) => s + r.totalBottles, 0) * 10) / 10;
   const grandTotalPatients = rows.reduce((s, r) => s + r.totalPatients, 0);
 
   // Summary by contrast type
@@ -152,8 +152,7 @@ const ContrastUsage = () => {
     if (rows.length === 0) return;
     const header = 'Date,Contrast Type,Volume (ml),Bottles,Patients\n';
     const csvRows = rows.map(r => `${r.date},${r.contrastLabel},${r.totalMls},${r.totalBottles},${r.totalPatients}`).join('\n');
-    const totalRow = `\nTotal,,${grandTotalMls},${grandTotalBottles},${grandTotalPatients}`;
-    const blob = new Blob([header + csvRows + totalRow], { type: 'text/csv' });
+    const blob = new Blob([header + csvRows], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -170,10 +169,10 @@ const ContrastUsage = () => {
             <div className="flex items-center gap-3">
               <NavLink to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                 <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm">Dashboard</span>
+                <span className="text-sm">Daily Log</span>
               </NavLink>
               <FileText className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-bold text-foreground">Contrast Usage Report</h1>
+              <h1 className="text-lg font-bold text-foreground">Operations Reports</h1>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -258,7 +257,7 @@ const ContrastUsage = () => {
               )}
 
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Contrast Type</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Contrast filter</label>
                 <Select value={filterContrast} onValueChange={setFilterContrast}>
                   <SelectTrigger className="h-9 w-[160px] text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -272,7 +271,7 @@ const ContrastUsage = () => {
 
               <div className="ml-auto">
                 <Button variant="outline" size="sm" onClick={exportCSV} disabled={rows.length === 0}>
-                  <Download className="h-3 w-3 mr-1" /> Export CSV
+                  <Download className="h-3 w-3 mr-1" /> Export contrast CSV
                 </Button>
               </div>
             </div>
@@ -282,6 +281,7 @@ const ContrastUsage = () => {
           </CardContent>
         </Card>
 
+        <h2 className="text-lg font-bold">Contrast administration</h2>
         {/* Summary Cards */}
         {summaryByType.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -330,9 +330,9 @@ const ContrastUsage = () => {
               {rows.length > 0 && (
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={2} className="text-xs font-bold">Grand Total</TableCell>
+                    <TableCell colSpan={2} className="text-xs font-bold">Total recorded</TableCell>
                     <TableCell className="text-xs text-right font-bold font-mono">{grandTotalMls.toFixed(1)}</TableCell>
-                    <TableCell className="text-xs text-right font-bold font-mono">{grandTotalBottles.toFixed(1)}</TableCell>
+                    <TableCell className="text-xs text-right text-muted-foreground">By type above</TableCell>
                     <TableCell className="text-xs text-right font-bold font-mono">{grandTotalPatients}</TableCell>
                   </TableRow>
                 </TableFooter>
@@ -340,6 +340,8 @@ const ContrastUsage = () => {
             </Table>
           </CardContent>
         </Card>
+
+        <FilmAndStoreReport start={start} end={end} />
 
         {/* Footer */}
         <div className="text-center py-4">
