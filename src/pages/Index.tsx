@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ShiftSection } from '@/components/ShiftSection';
 import { FilmUsageSection } from '@/components/FilmUsageSection';
+import { RoomUsageSection } from '@/components/RoomUsageSection';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { DateSelector } from '@/components/DateSelector';
 import { DailySummary } from '@/components/DailySummary';
 import { ShiftType, ContrastType } from '@/types/contrast';
@@ -47,7 +50,9 @@ export const Dashboard = () => {
   const { signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [activeShift, setActiveShift] = useState<ShiftType>('morning');
-  const [activeCategory, setActiveCategory] = useState<'contrast' | 'films'>('contrast');
+  const [activeCategory, setActiveCategory] = useState<'contrast' | 'films' | 'supplies'>('contrast');
+  const [sharedFilms,setSharedFilms] = useState<Tables<'stock_shift_usage'>[]>([]);
+  const [filmLoadError,setFilmLoadError]=useState('');
   const [filmRevision, setFilmRevision] = useState(0);
   useEffect(() => {
     const refresh = () => setFilmRevision(value => value + 1);
@@ -106,13 +111,22 @@ export const Dashboard = () => {
   }, 0);
 
   const dateKey = format(selectedDate, 'yyyy-MM-dd');
+  useEffect(()=>{
+    let active=true;
+    setSharedFilms([]);
+    void supabase.from('stock_shift_usage').select('*').eq('date',dateKey).eq('category','films').then(result=>{if(active){setFilmLoadError(result.error?'Shared film totals could not load. Displayed browser totals may be incomplete.':'');if(result.data)setSharedFilms(result.data);}});
+    return ()=>{active=false;};
+  },[dateKey,filmRevision]);
   const filmTotals = SHIFTS.reduce((totals, shift) => {
     let saved: Record<string, Record<string, number>> = {};
     try { saved = JSON.parse(localStorage.getItem(`radcontrack-film-${dateKey}-${shift}`) || '{}'); } catch { /* leave totals unchanged */ }
-    for (const room of Object.values(saved)) {
+    const shared=sharedFilms.filter(row=>row.date===dateKey&&row.shift===shift);
+    for (const [roomName,room] of Object.entries(saved)) {
+      if(shared.some(row=>row.room===roomName))continue;
       totals.film1714 += Number(room['17 × 14']) || 0;
       totals.film1210 += Number(room['12 × 10']) || 0;
     }
+    for(const row of shared){const values=row.quantities as Record<string,number>;totals.film1714+=values.film1714||0;totals.film1210+=values.film1210||0;}
     return totals;
   }, { film1714: 0, film1210: 0 });
   void filmRevision;
@@ -225,6 +239,7 @@ export const Dashboard = () => {
         ) : (
           <>
             {/* Stat Cards */}
+            {filmLoadError&&<p role="alert" className="text-destructive mb-3">{filmLoadError}</p>}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <StatCard 
                 label="Contrast administered"
@@ -254,9 +269,10 @@ export const Dashboard = () => {
                 </div>
                 {SHIFTS.filter(shift => shift === activeShift).map((shift) => (
                   <div key={shift} className="space-y-3">
-                    <Tabs value={activeCategory} onValueChange={value => setActiveCategory(value as 'contrast' | 'films')} className="space-y-3">
-                      <TabsList className="grid grid-cols-2 w-full max-w-sm"><TabsTrigger value="contrast">Contrast</TabsTrigger><TabsTrigger value="films">Films</TabsTrigger></TabsList>
+                    <Tabs value={activeCategory} onValueChange={value => setActiveCategory(value as 'contrast' | 'films' | 'supplies')} className="space-y-3">
+                      <TabsList className="grid grid-cols-3 w-full"><TabsTrigger value="contrast">Contrast mls</TabsTrigger><TabsTrigger value="films">Films</TabsTrigger><TabsTrigger value="supplies">Stock used</TabsTrigger></TabsList>
                       <TabsContent value="contrast">
+                    <p className="text-sm text-muted-foreground mb-3">This clinical record tracks administered millilitres. Record bottles actually depleted under Stock used to update room balances. These figures are kept separate to avoid estimating stock from rounded volumes.</p>
                     <ShiftSection
                       shift={shift}
                       shiftData={data[shift]}
@@ -270,6 +286,7 @@ export const Dashboard = () => {
                       onMetadataChange={handleMetadataChange}
                     />
                       </TabsContent>
+                      <TabsContent value="supplies"><RoomUsageSection key={`${dateKey}-${shift}-supplies`} shift={shift} date={selectedDate} category="supplies" /></TabsContent>
                       <TabsContent value="films">
                     <FilmUsageSection key={`${selectedDate.toDateString()}-${shift}`} shift={shift} date={selectedDate} />
                       </TabsContent>

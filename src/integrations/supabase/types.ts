@@ -85,7 +85,7 @@ export type Database = {
           id: string; batch_id: string; item_id: string; movement_type: string;
           quantity: number; balance_after: number; occurred_on: string; recipient_name: string;
           destination: string | null; reference: string | null;
-          recorded_by: string; created_at: string
+          recorded_by: string; created_at: string; balance_known: boolean; shift: string | null
         }
         Insert: {
           id?: string; batch_id: string; item_id: string; movement_type: string;
@@ -101,11 +101,37 @@ export type Database = {
         }
         Relationships: [{ foreignKeyName: "stock_movements_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "stock_items"; referencedColumns: ["id"] }]
       }
+      room_stock: {
+        Row: { room: string; item_id: string; balance: number; counted_on: string | null; counted_at: string | null }
+        Insert: { room: string; item_id: string; balance?: number; counted_on?: string | null; counted_at?: string | null }
+        Update: { balance?: number; counted_on?: string | null; counted_at?: string | null }
+        Relationships: []
+      }
+      stock_shift_usage: {
+        Row: { date: string; room: string; shift: string; category: string; quantities: Json; patients: number; version: number; recorded_by_name: string; updated_at: string }
+        Insert: { date: string; room: string; shift: string; category: string; quantities?: Json; patients?: number; version?: number; recorded_by_name: string; updated_at?: string }
+        Update: { quantities?: Json; patients?: number; version?: number; recorded_by_name?: string; updated_at?: string }
+        Relationships: []
+      }
+      room_stock_movements: {
+        Row: { id: string; batch_id: string; room: string; item_id: string; movement_type: string; change: number; balance_after: number; balance_known: boolean; occurred_on: string; shift: string | null; staff_name: string; recorded_by: string; created_at: string }
+        Insert: { room: string; item_id: string; movement_type: string; change: number; balance_after: number; balance_known: boolean; occurred_on: string; shift?: string | null; staff_name: string; recorded_by: string; batch_id: string }
+        Update: { change?: number }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      move_room_stock: {
+        Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
+        Returns: string
+      }
+      save_room_usage: {
+        Args: { p_date: string; p_room: string; p_shift: string; p_category: string; p_quantities: Json; p_patients: number; p_staff: string; p_version: number }
+        Returns: number
+      }
       record_stock_batch: {
         Args: {
           p_type: string; p_date: string; p_recipient: string; p_lines: Json;
