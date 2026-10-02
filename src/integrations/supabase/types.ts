@@ -74,12 +74,45 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_items: {
+        Row: { id: string; name: string; unit: string; balance: number; active: boolean; opening_recorded: boolean }
+        Insert: { id: string; name: string; unit: string; balance?: number; active?: boolean; opening_recorded?: boolean }
+        Update: { id?: string; name?: string; unit?: string; balance?: number; active?: boolean; opening_recorded?: boolean }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          id: string; batch_id: string; item_id: string; movement_type: string;
+          quantity: number; balance_after: number; occurred_on: string; recipient_name: string;
+          destination: string | null; reference: string | null;
+          recorded_by: string; created_at: string
+        }
+        Insert: {
+          id?: string; batch_id: string; item_id: string; movement_type: string;
+          quantity: number; balance_after: number; occurred_on: string; recipient_name: string;
+          destination?: string | null; reference?: string | null;
+          recorded_by: string; created_at?: string
+        }
+        Update: {
+          id?: string; batch_id?: string; item_id?: string; movement_type?: string;
+          quantity?: number; balance_after?: number; occurred_on?: string; recipient_name?: string;
+          destination?: string | null; reference?: string | null;
+          recorded_by?: string; created_at?: string
+        }
+        Relationships: [{ foreignKeyName: "stock_movements_item_id_fkey"; columns: ["item_id"]; isOneToOne: false; referencedRelation: "stock_items"; referencedColumns: ["id"] }]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_stock_batch: {
+        Args: {
+          p_type: string; p_date: string; p_recipient: string; p_lines: Json;
+          p_destination?: string | null; p_reference?: string | null
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

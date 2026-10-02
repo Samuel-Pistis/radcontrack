@@ -1,8 +1,11 @@
 import { useContrastData } from '@/hooks/useContrastData';
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { ShiftSection } from '@/components/ShiftSection';
+import { FilmUsageSection } from '@/components/FilmUsageSection';
 import { DateSelector } from '@/components/DateSelector';
 import { DailySummary } from '@/components/DailySummary';
-import { ShiftType, ContrastType, CONTRAST_LABELS } from '@/types/contrast';
+import { ShiftType, ContrastType } from '@/types/contrast';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -15,11 +18,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { RotateCcw, Loader2, LogOut, Sun, Moon, FileText, TrendingUp } from 'lucide-react';
+import { RotateCcw, Loader2, LogOut, Sun, Moon, FileText, TrendingUp, Boxes } from 'lucide-react';
 import bthdcLogo from '@/assets/bthdc-logo.png';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { NavLink } from '@/components/NavLink';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
@@ -42,6 +46,14 @@ export const Dashboard = () => {
   } = useContrastData();
   const { signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [activeShift, setActiveShift] = useState<ShiftType>('morning');
+  const [activeCategory, setActiveCategory] = useState<'contrast' | 'films'>('contrast');
+  const [filmRevision, setFilmRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => setFilmRevision(value => value + 1);
+    window.addEventListener('radcontrack:film-updated', refresh);
+    return () => window.removeEventListener('radcontrack:film-updated', refresh);
+  }, []);
 
   const handleReceivedChange = (
     shift: ShiftType,
@@ -87,18 +99,23 @@ export const Dashboard = () => {
   };
 
   // Calculate stat cards
-  const totalReceived = CONTRAST_TYPES.reduce((sum, type) => {
-    return sum + data.morning[type].received.mls;
-  }, 0);
-
   const totalConsumed = CONTRAST_TYPES.reduce((sum, type) => {
     return sum + data.morning[type].consumption.mls 
       + data.afternoon[type].consumption.mls 
       + data.night[type].consumption.mls;
   }, 0);
 
-  const totalRemaining = totalReceived - totalConsumed;
-  const consumptionPct = totalReceived > 0 ? Math.round((totalConsumed / totalReceived) * 100) : 0;
+  const dateKey = format(selectedDate, 'yyyy-MM-dd');
+  const filmTotals = SHIFTS.reduce((totals, shift) => {
+    let saved: Record<string, Record<string, number>> = {};
+    try { saved = JSON.parse(localStorage.getItem(`radcontrack-film-${dateKey}-${shift}`) || '{}'); } catch { /* leave totals unchanged */ }
+    for (const room of Object.values(saved)) {
+      totals.film1714 += Number(room['17 × 14']) || 0;
+      totals.film1210 += Number(room['12 × 10']) || 0;
+    }
+    return totals;
+  }, { film1714: 0, film1210: 0 });
+  void filmRevision;
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,18 +130,25 @@ export const Dashboard = () => {
                 className="h-9 w-9 object-contain rounded-lg bg-white/10 p-0.5"
               />
               <span className="text-base font-bold tracking-tight text-white">
-                Radiology Daily Contrast Tracker
+                Radiology Operations & Inventory
               </span>
             </div>
 
             <div className="flex items-center gap-1">
+              <NavLink to="/" className="hidden md:flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
+                Daily Log
+              </NavLink>
+              <NavLink to="/stock" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
+                <Boxes className="h-4 w-4" />
+                <span className="hidden sm:inline">Store & Stock</span>
+              </NavLink>
               <NavLink to="/usage" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
                 <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Usage Report</span>
+                <span className="hidden sm:inline">Reports</span>
               </NavLink>
               <NavLink to="/weekly-trend" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
                 <TrendingUp className="h-4 w-4" />
-                <span className="hidden sm:inline">Weekly Trend</span>
+                <span className="hidden sm:inline">Contrast trends</span>
               </NavLink>
               <Button
                 variant="ghost"
@@ -143,14 +167,14 @@ export const Dashboard = () => {
                     className="gap-2 text-white/70 hover:text-white hover:bg-white/10"
                   >
                     <RotateCcw className="h-4 w-4" />
-                    <span className="hidden sm:inline">Reset</span>
+                    <span className="hidden sm:inline">Reset contrast</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="bg-card border-border">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Reset Form Data?</AlertDialogTitle>
+                    <AlertDialogTitle>Reset contrast entries?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will clear all data for the selected date. This action cannot be undone.
+                      This clears contrast entries for the selected date. Film and store records remain in place.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -181,7 +205,7 @@ export const Dashboard = () => {
           <div className="flex items-center justify-between mb-1">
             <div>
               <p className="text-sm text-muted-foreground">BT Health & Diagnostics Centre</p>
-              <h1 className="text-xl font-bold text-foreground">Daily Contrast Consumption</h1>
+              <h1 className="text-xl font-bold text-foreground">Daily Operations</h1>
             </div>
           </div>
           <DateSelector
@@ -201,59 +225,65 @@ export const Dashboard = () => {
         ) : (
           <>
             {/* Stat Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <StatCard 
-                label="Total Received" 
-                value={`${totalReceived.toLocaleString()}`}
-                unit="mls"
-              />
-              <StatCard 
-                label="Total Consumed" 
+                label="Contrast administered"
                 value={`${totalConsumed.toLocaleString()}`}
-                unit="mls"
-                badge={totalReceived > 0 ? `${consumptionPct}%` : undefined}
-                badgeVariant={consumptionPct > 80 ? 'warning' : 'default'}
+                unit="ml"
               />
               <StatCard 
-                label="Remaining Stock" 
-                value={`${totalRemaining.toLocaleString()}`}
-                unit="mls"
-                badgeVariant={totalRemaining < 0 ? 'danger' : 'success'}
-                badge={totalRemaining < 0 ? 'Low' : undefined}
+                label="17 × 14 films printed"
+                value={`${filmTotals.film1714.toLocaleString()}`}
+                unit="sheets"
               />
               <StatCard 
-                label="Contrast Types" 
-                value="4"
-                unit="tracked"
+                label="12 × 10 films printed"
+                value={`${filmTotals.film1210.toLocaleString()}`}
+                unit="sheets"
               />
             </div>
 
             <div className="flex flex-col xl:flex-row gap-6">
               {/* Shift Sections */}
               <div className="flex-1 space-y-4 min-w-0">
-                {SHIFTS.map((shift) => (
-                  <ShiftSection
-                    key={shift}
-                    shift={shift}
-                    shiftData={data[shift]}
-                    getReceivedValues={getReceivedValues}
-                    getAdditionalReceivedValues={getAdditionalReceivedValues}
-                    getOutstandingValues={getOutstandingValues}
-                     onReceivedChange={handleReceivedChange}
-                     onAdditionalReceivedChange={handleAdditionalReceivedChange}
-                     onConsumptionChange={handleConsumptionChange}
-                     onPatientsChange={handlePatientsChange}
-                     onMetadataChange={handleMetadataChange}
-                  />
+                <div className="dashboard-card p-4">
+                  <p className="text-sm font-semibold mb-3">Select shift</p>
+                  <div className="flex flex-wrap gap-2">
+                    {SHIFTS.map(shift => <Button key={shift} variant={activeShift === shift ? 'default' : 'outline'} onClick={() => setActiveShift(shift)} className="capitalize">{shift}</Button>)}
+                  </div>
+                </div>
+                {SHIFTS.filter(shift => shift === activeShift).map((shift) => (
+                  <div key={shift} className="space-y-3">
+                    <Tabs value={activeCategory} onValueChange={value => setActiveCategory(value as 'contrast' | 'films')} className="space-y-3">
+                      <TabsList className="grid grid-cols-2 w-full max-w-sm"><TabsTrigger value="contrast">Contrast</TabsTrigger><TabsTrigger value="films">Films</TabsTrigger></TabsList>
+                      <TabsContent value="contrast">
+                    <ShiftSection
+                      shift={shift}
+                      shiftData={data[shift]}
+                      getReceivedValues={getReceivedValues}
+                      getAdditionalReceivedValues={getAdditionalReceivedValues}
+                      getOutstandingValues={getOutstandingValues}
+                      onReceivedChange={handleReceivedChange}
+                      onAdditionalReceivedChange={handleAdditionalReceivedChange}
+                      onConsumptionChange={handleConsumptionChange}
+                      onPatientsChange={handlePatientsChange}
+                      onMetadataChange={handleMetadataChange}
+                    />
+                      </TabsContent>
+                      <TabsContent value="films">
+                    <FilmUsageSection key={`${selectedDate.toDateString()}-${shift}`} shift={shift} date={selectedDate} />
+                      </TabsContent>
+                    </Tabs>
+                  </div>
                 ))}
 
                 {/* Footer Tip */}
-                <div className="p-4 dashboard-card">
+                {activeCategory === 'contrast' && <div className="p-4 dashboard-card">
                   <p className="text-sm text-muted-foreground">
                     <span className="text-primary font-medium">Tip:</span> Outstanding Stock = Received - Consumption. 
                     Negative values appear in red. Each shift inherits the previous shift's outstanding stock.
                   </p>
-                </div>
+                </div>}
 
                 {/* Footer Credit */}
                 <div className="text-center py-6">
@@ -267,9 +297,9 @@ export const Dashboard = () => {
               </div>
 
               {/* Summary Sidebar */}
-              <div className="xl:w-80 shrink-0 xl:sticky xl:top-24 xl:self-start">
+              {activeCategory === 'contrast' && <div className="xl:w-80 shrink-0 xl:sticky xl:top-24 xl:self-start">
                 <DailySummary data={data} />
-              </div>
+              </div>}
             </div>
           </>
         )}
