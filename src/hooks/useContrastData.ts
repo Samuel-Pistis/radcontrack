@@ -9,15 +9,7 @@ import {
 } from '@/types/contrast';
 import { useToast } from '@/hooks/use-toast';
 
-// MRI Contrast: 15ml = 1 bottle
-const MRI_ML_PER_BOTTLE = 15;
-
-const autoConvertMri = (field: 'mls' | 'bottles', value: number): { mls: number; bottles: number } => {
-  if (field === 'mls') {
-    return { mls: value, bottles: Math.round((value / MRI_ML_PER_BOTTLE) * 10) / 10 };
-  }
-  return { mls: Math.round(value * MRI_ML_PER_BOTTLE * 10) / 10, bottles: value };
-};
+import { clinicalBottleCapacity, convertContrast } from '@/lib/contrastVolume';
 
 export const useContrastData = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -143,8 +135,8 @@ export const useContrastData = () => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
-      if (contrastType === 'mriContrast') {
-        const converted = autoConvertMri(field, value);
+      if (clinicalBottleCapacity(contrastType) > 0) {
+        const converted = convertContrast(contrastType, field, value);
         contrastData.received = { ...contrastData.received, ...converted };
       } else {
         contrastData.received = { ...contrastData.received, [field]: value };
@@ -175,8 +167,8 @@ export const useContrastData = () => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
-      if (contrastType === 'mriContrast') {
-        const converted = autoConvertMri(field, value);
+      if (clinicalBottleCapacity(contrastType) > 0) {
+        const converted = convertContrast(contrastType, field, value);
         contrastData.additionalReceived = { ...(contrastData.additionalReceived || { mls: 0, bottles: 0 }), ...converted };
       } else {
         contrastData.additionalReceived = { ...(contrastData.additionalReceived || { mls: 0, bottles: 0 }), [field]: value };
@@ -214,8 +206,8 @@ export const useContrastData = () => {
       const newData = { ...prev };
       const shiftData = { ...newData[shift] };
       const contrastData = { ...shiftData[contrastType] };
-      if (contrastType === 'mriContrast') {
-        const converted = autoConvertMri(field, value);
+      if (clinicalBottleCapacity(contrastType) > 0) {
+        const converted = convertContrast(contrastType, field, value);
         contrastData.consumption = { ...contrastData.consumption, ...converted };
       } else {
         contrastData.consumption = { ...contrastData.consumption, [field]: value };
@@ -331,3 +323,4 @@ export const useContrastData = () => {
     resetForm,
   };
 };
+
