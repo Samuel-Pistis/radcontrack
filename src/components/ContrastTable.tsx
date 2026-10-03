@@ -254,6 +254,7 @@ export const ContrastTable = ({
               {CONTRAST_TYPES.map((type) => {
                 const outstanding = getOutstandingValues(shift, type);
                 const isMlsNegative = outstanding.mls < 0;
+                const isBottlesNegative = clinicalBottleCapacity(type)>0 ? isMlsNegative : outstanding.bottles < 0;
 
                 return (
                   <>
