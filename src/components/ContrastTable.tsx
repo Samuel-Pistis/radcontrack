@@ -1,3 +1,4 @@
+import { clinicalBottleCapacity, contrastEquivalent } from '@/lib/contrastVolume';
 import { ShiftType, ContrastType, CONTRAST_LABELS, ContrastValues } from '@/types/contrast';
 import { Plus } from 'lucide-react';
 
@@ -47,7 +48,7 @@ export const ContrastTable = ({
 
   return (
     <div className="space-y-4">
-      {/* Main Table */}
+      <p className="text-xs text-muted-foreground">CT: 100 ml per bottle. MRI: 15 ml per bottle. Bottle equivalents calculate from ml; fractional equivalents do not mean a whole bottle was opened.</p>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
@@ -81,7 +82,7 @@ export const ContrastTable = ({
                     key={`${type}-bottles`}
                     className="p-2 text-center text-xs font-medium text-muted-foreground border-b border-border"
                   >
-                    Total Bottles
+                    Bottle equivalent
                   </th>
                 </>
               ))}
@@ -128,14 +129,14 @@ export const ContrastTable = ({
                           type="number"
                           min="0"
                           max={1000}
-                          value={received.bottles || ''}
+                          readOnly={clinicalBottleCapacity(type)>0} value={(clinicalBottleCapacity(type)>0 ? Number(contrastEquivalent(type,received.mls).toFixed(3)) : received.bottles) || ''}
                           onChange={(e) => onReceivedChange(type, 'bottles', Number(e.target.value) || 0)}
                           className="clinical-input text-center"
                           placeholder="0"
                         />
                       ) : (
                         <div className={`clinical-input clinical-input-readonly text-center ${hasAdditional ? 'text-primary font-semibold' : ''}`}>
-                          {received.bottles}
+                          {clinicalBottleCapacity(type)>0 ? Number(contrastEquivalent(type,received.mls).toFixed(3)) : received.bottles}
                           {hasAdditional && <Plus className="inline h-3 w-3 ml-0.5 text-primary" />}
                         </div>
                       )}
@@ -177,7 +178,7 @@ export const ContrastTable = ({
                           type="number"
                           min="0"
                           max={1000}
-                          value={additional.bottles || ''}
+                          readOnly={clinicalBottleCapacity(type)>0} value={(clinicalBottleCapacity(type)>0 ? Number(contrastEquivalent(type,additional.mls).toFixed(3)) : additional.bottles) || ''}
                           onChange={(e) => onAdditionalReceivedChange(type, 'bottles', Number(e.target.value) || 0)}
                           className="clinical-input text-center border-primary/30"
                           placeholder="0"
@@ -212,7 +213,7 @@ export const ContrastTable = ({
                       type="number"
                       min="0"
                       max={1000}
-                      value={consumption[type].bottles || ''}
+                      readOnly={clinicalBottleCapacity(type)>0} value={(clinicalBottleCapacity(type)>0 ? Number(contrastEquivalent(type,consumption[type].mls).toFixed(3)) : consumption[type].bottles) || ''}
                       onChange={(e) => onConsumptionChange(type, 'bottles', Number(e.target.value) || 0)}
                       className="clinical-input text-center"
                       placeholder="0"
@@ -253,7 +254,7 @@ export const ContrastTable = ({
               {CONTRAST_TYPES.map((type) => {
                 const outstanding = getOutstandingValues(shift, type);
                 const isMlsNegative = outstanding.mls < 0;
-                const isBottlesNegative = outstanding.bottles < 0;
+
                 return (
                   <>
                     <td
@@ -277,7 +278,7 @@ export const ContrastTable = ({
                       <div className={`clinical-input clinical-input-readonly text-center ${
                         isBottlesNegative ? 'stock-negative' : 'stock-positive'
                       }`}>
-                        {renderValueCell(outstanding.bottles, isBottlesNegative, true)}
+                        {renderValueCell(clinicalBottleCapacity(type)>0 ? Number(contrastEquivalent(type,outstanding.mls).toFixed(3)) : outstanding.bottles, isMlsNegative, true)}
                       </div>
                     </td>
                   </>
@@ -337,3 +338,6 @@ export const ContrastTable = ({
     </div>
   );
 };
+
+
+

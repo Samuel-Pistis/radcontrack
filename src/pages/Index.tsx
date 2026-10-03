@@ -272,7 +272,7 @@ export const Dashboard = () => {
                     <Tabs value={activeCategory} onValueChange={value => setActiveCategory(value as 'contrast' | 'films' | 'supplies')} className="space-y-3">
                       <TabsList className="grid grid-cols-3 w-full"><TabsTrigger value="contrast">Contrast mls</TabsTrigger><TabsTrigger value="films">Films</TabsTrigger><TabsTrigger value="supplies">Stock used</TabsTrigger></TabsList>
                       <TabsContent value="contrast">
-                    <p className="text-sm text-muted-foreground mb-3">This clinical record tracks administered millilitres. Record bottles actually depleted under Stock used to update room balances. These figures are kept separate to avoid estimating stock from rounded volumes.</p>
+                    <p className="text-sm text-muted-foreground mb-3">This clinical record tracks administered millilitres. Enter actual administered and discarded ml under Stock used to update room balances. These figures are kept separate to avoid estimating stock from rounded volumes.</p>
                     <ShiftSection
                       shift={shift}
                       shiftData={data[shift]}
@@ -362,3 +362,4 @@ const Index = () => {
 };
 
 export default Index;
+
