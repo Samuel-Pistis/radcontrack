@@ -108,7 +108,7 @@ export type Database = {
         Relationships: []
       }
       stock_shift_usage: {
-        Row: { date: string; room: string; shift: string; category: string; quantities: Json; patients: number; version: number; recorded_by_name: string; updated_at: string }
+        Row: { date: string; room: string; shift: string; category: string; quantities: Json; contrast_volumes: Json; patients: number; version: number; recorded_by_name: string; updated_at: string }
         Insert: { date: string; room: string; shift: string; category: string; quantities?: Json; patients?: number; version?: number; recorded_by_name: string; updated_at?: string }
         Update: { quantities?: Json; patients?: number; version?: number; recorded_by_name?: string; updated_at?: string }
         Relationships: []
@@ -124,6 +124,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      move_room_stock_volume: {
+        Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
+        Returns: string
+      }
+      save_room_usage_volume: {
+        Args: { p_date: string; p_room: string; p_shift: string; p_category: string; p_quantities: Json; p_patients: number; p_staff: string; p_version: number; p_volumes: Json }
+        Returns: number
+      }
       move_room_stock: {
         Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
         Returns: string

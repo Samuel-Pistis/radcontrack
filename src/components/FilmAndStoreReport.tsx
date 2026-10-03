@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
-import { roomUnit } from '@/lib/roomStock';
+import { roomUnit, stockAmount, bottleCapacity } from '@/lib/roomStock';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,6 +75,11 @@ export function FilmAndStoreReport({ start, end }: { start: Date; end: Date }) {
 
   const film1714 = filmRows.reduce((sum, row) => sum + row.film1714, 0);
   const usageTotals=shared.reduce<Record<string,number>>((totals,row)=>{for(const [item,quantity] of Object.entries(row.quantities as Record<string,number>))totals[item]=(totals[item]||0)+quantity;return totals;},{});
+  const breakdown = (row: Tables<'stock_shift_usage'>, item: string) => {
+    if (!bottleCapacity(item)) return null;
+    const detail = (row.contrast_volumes as Record<string,{administered_ml:number;waste_ml:number}>)[item];
+    return <span className="block text-xs text-muted-foreground">{detail ? `${detail.administered_ml} ml administered; ${detail.waste_ml} ml discarded` : 'Earlier total; volume breakdown not recorded'}</span>;
+  };
   const film1210 = filmRows.reduce((sum, row) => sum + row.film1210, 0);
   const exportFilmCSV = () => {
     const header = 'Date,Room,Patients printed for,17 x 14 films,12 x 10 films\n';
@@ -85,7 +90,7 @@ export function FilmAndStoreReport({ start, end }: { start: Date; end: Date }) {
 
   return <div className="space-y-6">
     {reportError&&<p role="alert" className="text-destructive">Shared report could not load: {reportError}. Browser entries below are incomplete.</p>}
-    <Card><CardHeader><CardTitle className="text-base">Shared stock actually used</CardTitle></CardHeader><CardContent><div className="flex flex-wrap gap-4 mb-4">{Object.entries(usageTotals).filter(([,quantity])=>quantity>0).map(([item,quantity])=><p key={item} className="text-sm"><strong>{catalogue.find(entry=>entry.id===item)?.name||item}:</strong> {quantity} {roomUnit(item,catalogue.find(entry=>entry.id===item)?.unit||'units')}</p>)}</div><div className="overflow-x-auto"><Table><TableHeader><TableRow>{['Date','Room','Shift','Item','Used','Recorded by'].map(label=><TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader><TableBody>{shared.flatMap(row=>Object.entries(row.quantities as Record<string,number>).filter(([,quantity])=>quantity>0).map(([item,quantity])=><TableRow key={`${row.date}-${row.room}-${row.shift}-${item}`}><TableCell>{row.date}</TableCell><TableCell>{row.room}</TableCell><TableCell>{row.shift}</TableCell><TableCell>{catalogue.find(entry=>entry.id===item)?.name||item}</TableCell><TableCell>{quantity} {roomUnit(item,catalogue.find(entry=>entry.id===item)?.unit||'units')}</TableCell><TableCell>{row.recorded_by_name}</TableCell></TableRow>))}</TableBody></Table></div></CardContent></Card>
+    <Card><CardHeader><CardTitle className="text-base">Shared stock actually used</CardTitle></CardHeader><CardContent><div className="flex flex-wrap gap-4 mb-4">{Object.entries(usageTotals).filter(([,quantity])=>quantity>0).map(([item,quantity])=><p key={item} className="text-sm"><strong>{catalogue.find(entry=>entry.id===item)?.name||item}:</strong> {stockAmount(item,quantity)} {!bottleCapacity(item)&&roomUnit(item,catalogue.find(entry=>entry.id===item)?.unit||'units')}</p>)}</div><div className="overflow-x-auto"><Table><TableHeader><TableRow>{['Date','Room','Shift','Item','Used','Recorded by'].map(label=><TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader><TableBody>{shared.flatMap(row=>Object.entries(row.quantities as Record<string,number>).filter(([,quantity])=>quantity>0).map(([item,quantity])=><TableRow key={`${row.date}-${row.room}-${row.shift}-${item}`}><TableCell>{row.date}</TableCell><TableCell>{row.room}</TableCell><TableCell>{row.shift}</TableCell><TableCell>{catalogue.find(entry=>entry.id===item)?.name||item}</TableCell><TableCell>{stockAmount(item,quantity)} {!bottleCapacity(item)&&roomUnit(item,catalogue.find(entry=>entry.id===item)?.unit||'units')}{breakdown(row,item)}</TableCell><TableCell>{row.recorded_by_name}</TableCell></TableRow>))}</TableBody></Table></div></CardContent></Card>
     <Card><CardHeader><CardTitle className="text-base">Shared picks from store</CardTitle></CardHeader><CardContent><div className="overflow-x-auto"><Table><TableHeader><TableRow>{['Date','Room','Shift','Item','Picked','Picked by'].map(label=><TableHead key={label}>{label}</TableHead>)}</TableRow></TableHeader><TableBody>{sharedMovements.map(row=><TableRow key={row.id}><TableCell>{row.occurred_on}</TableCell><TableCell>{row.destination}</TableCell><TableCell>{row.shift}</TableCell><TableCell>{catalogue.find(entry=>entry.id===row.item_id)?.name||row.item_id}</TableCell><TableCell>{row.quantity} {catalogue.find(entry=>entry.id===row.item_id)?.unit}</TableCell><TableCell>{row.recipient_name}</TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card>
     <Card><CardHeader className="flex flex-row items-center justify-between gap-3"><CardTitle className="text-base flex items-center gap-2"><Film className="h-4 w-4" /> Film printing</CardTitle><Button variant="outline" size="sm" onClick={exportFilmCSV} disabled={filmRows.length === 0}><Download className="h-3 w-3 mr-1" />Export film CSV</Button></CardHeader>
       <CardContent><div className="grid grid-cols-2 gap-3 mb-4"><div className="rounded-xl bg-muted/50 p-4"><p className="text-xs text-muted-foreground">17 × 14 printed</p><p className="text-2xl font-bold">{film1714} <span className="text-sm font-normal">sheets</span></p></div><div className="rounded-xl bg-muted/50 p-4"><p className="text-xs text-muted-foreground">12 × 10 printed</p><p className="text-2xl font-bold">{film1210} <span className="text-sm font-normal">sheets</span></p></div></div>
@@ -95,3 +100,4 @@ export function FilmAndStoreReport({ start, end }: { start: Date; end: Date }) {
     <p className="text-xs text-muted-foreground">New usage and picks are shared with the team. Earlier film and store entries remain in this browser. Shared film entries take precedence for the same room and shift, so they are not counted twice.</p>
   </div>;
 }
+
