@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
-import { roomUnit, stockAmount, bottleCapacity } from '@/lib/roomStock';
+import { roomUnit, stockAmount, bottleCapacity, STOCK_ROOMS } from '@/lib/roomStock';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, Film, Boxes } from 'lucide-react';
 
-const ROOMS = ['X-ray', 'CT', 'MRI', 'Fluoroscopy'];
+const ROOMS = STOCK_ROOMS;
 const perPatient = (films: number, patients: number) => patients > 0 ? (films / patients).toFixed(2) : '—';
 const SHIFTS = ['morning', 'afternoon', 'night'];
 type FilmRow = { date: string; room: string; patients: number; film1714: number; film1210: number };

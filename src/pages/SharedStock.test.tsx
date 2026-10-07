@@ -5,11 +5,12 @@ import SharedStock from './SharedStock';
 import { supabase } from '@/integrations/supabase/client';
 
 const access = vi.hoisted(() => ({ canManageStock: false, canManageStaff: false, user: { id: 'honey' }, movements: [] as Record<string, unknown>[], roomMovements: [] as Record<string, unknown>[] }));
+vi.mock('@/hooks/useTheme', () => ({ useTheme: () => ({theme:'dark',toggleTheme:vi.fn()}) }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ ...access, loading: false }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {
   from: (name: string) => {
     const result = Promise.resolve({ error: null, data: name === 'stock_items' ? [{ id: 'gastrolux', name: 'Gastrolux', unit: 'ml', balance: 200, opening_recorded: true, active: true }] : name === 'stock_movements' ? access.movements : name === 'room_stock_movements' ? access.roomMovements : [] });
-    const query = { select: () => query, eq: () => query, order: () => query, limit: () => query, then: result.then.bind(result) };
+    const query = { select: () => query, eq: () => query, order: () => query, limit: () => query, range: () => query, then: result.then.bind(result) };
     return query;
   }, rpc: vi.fn(),
 } }));
@@ -24,7 +25,7 @@ describe('shared stock access', () => {
       { id:'pick-1',item_id:'gastrolux',movement_type:'issue',quantity:100,occurred_on:'2026-10-07',recipient_name:'George',version:2,recorded_by:'other' },
     ];
     vi.mocked(supabase.rpc).mockResolvedValue({error:null,data:3} as never);
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
+    render(<MemoryRouter><SharedStock view="history" /></MemoryRouter>);
     fireEvent.click(await screen.findByRole('button',{name:'Correct count'}));
     expect(within(screen.getByRole('region',{name:'Correct stock entry'})).getByLabelText('Date')).toBeDisabled();
     expect(screen.queryByRole('button',{name:'Delete entry'})).not.toBeInTheDocument();
@@ -42,7 +43,7 @@ describe('shared stock access', () => {
       {id:'other',item_id:'gastrolux',movement_type:'issue',recorded_by:'other'},
       {id:'count',item_id:'gastrolux',movement_type:'opening',recorded_by:'honey'},
     ];
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
+    render(<MemoryRouter><SharedStock view="history" /></MemoryRouter>);
     await screen.findByRole('button',{name:'Edit / delete'});
     expect(screen.getAllByRole('button',{name:'Edit / delete'})).toHaveLength(1);
     expect(screen.queryByRole('button',{name:'Correct count'})).not.toBeInTheDocument();
@@ -50,47 +51,52 @@ describe('shared stock access', () => {
   it('opens a room count with its counted amount rather than its change', async () => {
     access.canManageStock = true; access.canManageStaff = false;
     access.roomMovements = [{id:'room-1',room:'MRI',item_id:'gastrolux',movement_type:'count',change:-20,balance_after:80,occurred_on:'2026-10-07',staff_name:'Honey',version:1}];
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
+    render(<MemoryRouter><SharedStock view="history" /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button',{name:'Room counts and usage'}));
     fireEvent.click(await screen.findByRole('button',{name:'Correct room count'}));
     expect(screen.getByLabelText('Quantity (ml)')).toHaveValue(80);
     expect(screen.queryByRole('button',{name:'Delete entry'})).not.toBeInTheDocument();
   });
-  it('lets staff pick and count rooms, while hiding store-management controls', async () => {
-    access.canManageStock = false;
-    access.canManageStaff = false;
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Picked for daily use' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Count room stock now' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Collected from store' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Count store stock now' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Approve staff login' })).not.toBeInTheDocument();
+  it('keeps entry forms separate from histories and reconciliation', async () => {
+    access.canManageStock = false; access.canManageStaff = false;
+    render(<MemoryRouter><SharedStock view="pick" /></MemoryRouter>);
+    await screen.findByRole('button',{name:'Save room pick'});
+    expect(screen.queryByText('Recent store movements')).not.toBeInTheDocument();
+    expect(screen.queryByText('Stock in rooms and total remaining')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link',{name:'Receive stock'})).not.toBeInTheDocument();
   });
-  it('honours the independent stock and staff permissions', async () => {
-    access.canManageStock = true;
-    access.canManageStaff = true;
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Collected from store' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Count store stock now' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Approve staff login' })).toBeInTheDocument();
+  it('lets staff count a room while hiding store count controls', async () => {
+    access.canManageStock = false; access.canManageStaff = false;
+    render(<MemoryRouter><SharedStock view="count" /></MemoryRouter>);
+    await screen.findByRole('button',{name:'Save physical count'});
+    expect(screen.getByRole('button',{name:'In a room'})).toBeInTheDocument();
+    expect(screen.queryByRole('button',{name:'In the store'})).not.toBeInTheDocument();
   });
-  it('gives a stock editor collection access without staff-approval controls', async () => {
-    access.canManageStock = true;
-    access.canManageStaff = false;
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Collected from store' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Approve staff login' })).not.toBeInTheDocument();
+  it('gives an editor a dedicated received-stock form', async () => {
+    access.canManageStock = true; access.canManageStaff = false;
+    render(<MemoryRouter><SharedStock view="receive" /></MemoryRouter>);
+    await screen.findByRole('button',{name:'Save received stock'});
+    expect(screen.getByRole('link',{name:'Receive stock'})).toBeInTheDocument();
+    expect(screen.queryByRole('button',{name:'Approve staff login'})).not.toBeInTheDocument();
   });
-  it('keeps staff approval for the shared administrator without store editing', async () => {
-    access.canManageStock = false;
-    access.canManageStaff = true;
-    render(<MemoryRouter><SharedStock /></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Approve staff login' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Picked for daily use' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Collected from store' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Count store stock now' })).not.toBeInTheDocument();
+  it('blocks the shared account from receiving stock even through a direct link', async () => {
+    access.canManageStock = false; access.canManageStaff = true;
+    render(<MemoryRouter><SharedStock view="receive" /></MemoryRouter>);
+    await waitFor(()=>expect(screen.getByRole('alert')).toHaveTextContent('requires an authorised stock-editor login'));
+    expect(screen.queryByRole('button',{name:'Save received stock'})).not.toBeInTheDocument();
+    expect(screen.getByRole('link',{name:'Staff access'})).toBeInTheDocument();
+  });
+  it('keeps staff approval in its own page', async () => {
+    access.canManageStock = false; access.canManageStaff = true;
+    render(<MemoryRouter><SharedStock view="access" /></MemoryRouter>);
+    await waitFor(()=>expect(screen.getByRole('button',{name:'Approve staff login'})).toBeInTheDocument());
+    expect(screen.queryByRole('button',{name:'Save room pick'})).not.toBeInTheDocument();
+  });
+  it('does not present an unconfirmed department total as a known balance', async () => {
+    access.canManageStock = false; access.canManageStaff = false;
+    render(<MemoryRouter><SharedStock view="balances" /></MemoryRouter>);
+    await screen.findByText('Unconfirmed');
+    expect(screen.getAllByText('Awaiting count')).toHaveLength(5);
+    expect(screen.queryByRole('button',{name:'Save room pick'})).not.toBeInTheDocument();
   });
 });

@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
-import { NavLink } from '@/components/NavLink';
+import type { Tables } from '@/integrations/supabase/types';
+import { AppNavigation } from '@/components/AppNavigation';
+
+
 import { Button } from '@/components/ui/button';
 import { ContrastType, CONTRAST_LABELS, ShiftType, DailyData } from '@/types/contrast';
 import {
@@ -30,16 +31,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  LogOut,
-  Sun,
-  Moon,
-  Home,
-  FileText,
   TrendingUp,
   Users,
   Droplets,
 } from 'lucide-react';
-import bthdcLogo from '@/assets/bthdc-logo.png';
+
 
 const CONTRAST_TYPES: ContrastType[] = ['jodascan300', 'hexopack350', 'gastrolux', 'mriContrast'];
 const SHIFTS: ShiftType[] = ['morning', 'afternoon', 'night'];
@@ -67,15 +63,15 @@ interface DayAggregation {
 }
 
 const WeeklyTrend = () => {
-  const { signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+
+
   const [currentWeekStart, setCurrentWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 0 })
   );
-  const [rawRows, setRawRows] = useState<any[]>([]);
+  const [rawRows, setRawRows] = useState<Pick<Tables<'daily_contrast_data'>,'date'|'data'>[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 0 });
+  const weekEnd = useMemo(() => endOfWeek(currentWeekStart, { weekStartsOn: 0 }),[currentWeekStart]);
   const weekDays = eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
 
   // Fetch data for the week
@@ -99,14 +95,14 @@ const WeeklyTrend = () => {
       setIsLoading(false);
     };
     fetchWeekData();
-  }, [currentWeekStart]);
+  }, [currentWeekStart,weekEnd]);
 
   // Aggregate per day
   const dailyData: DayAggregation[] = useMemo(() => {
     return weekDays.map((day) => {
       const dateStr = format(day, 'yyyy-MM-dd');
       const row = rawRows.find((r) => r.date === dateStr);
-      const dailyRecord = row?.data as DailyData | undefined;
+      const dailyRecord = row?.data as unknown as DailyData | undefined;
 
       const agg: DayAggregation = {
         date: dateStr,
@@ -132,8 +128,8 @@ const WeeklyTrend = () => {
             if (!ctData) return;
             const mls = Number(ctData.consumption?.mls || 0);
             const patients = Number(ctData.patients || 0);
-            (agg as any)[`${ct}Mls`] += mls;
-            (agg as any)[`${ct}Patients`] += patients;
+            agg[`${ct}Mls` as `${ContrastType}Mls`] += mls;
+            agg[`${ct}Patients` as `${ContrastType}Patients`] += patients;
             agg.totalMls += mls;
             agg.totalPatients += patients;
           });
@@ -167,35 +163,10 @@ const WeeklyTrend = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="dashboard-nav sticky top-0 z-50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <img src={bthdcLogo} alt="BTHDC Logo" className="h-9 w-9 object-contain rounded-lg bg-white/10 p-0.5" />
-              <span className="text-base font-bold tracking-tight text-white">Contrast Trend Report</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <NavLink to="/" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Daily Log</span>
-              </NavLink>
-              <NavLink to="/usage" className="flex items-center gap-1 text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 rounded-md text-sm transition-colors">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Usage Report</span>
-              </NavLink>
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10" onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="sm" className="gap-2 text-white/70 hover:text-white hover:bg-white/10" onClick={signOut}>
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Sign Out</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppNavigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <h1 className="text-2xl font-bold">Clinical contrast trends</h1>
         {/* Week Selector */}
         <div className="flex items-center justify-between">
           <Button variant="outline" size="sm" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>

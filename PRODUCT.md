@@ -11,3 +11,5 @@ Use plain operational labels. Keep entry forms focused on numbers staff actually
 
 ## Confirmed scope
 The user approved simplifying film entry to patients printed for, 17 × 14 films and 12 × 10 films. Maintain the existing appearance and input accessibility; remove the per-patient averages from the entry table.
+
+The user also approved a dedicated Daily usage home page, separate received-stock management for authorised editors, plain count labels, corrections beside movement records, separate balances/reports/history pages, and an authorised audit-history screen. Keep clinical contrast volumes and patient counts accessible separately. Do not mix clinical records with shared stock deductions or invent physical balances. Preserve both available themes and use the existing components rather than changing the visual identity.

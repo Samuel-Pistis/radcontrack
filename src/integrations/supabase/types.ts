@@ -128,6 +128,7 @@ export type Database = {
       set_stock_staff: { Args: { p_email: string; p_active: boolean }; Returns: undefined }
       edit_stock_receipt: { Args: { p_id: string; p_version: number; p_quantity: number; p_date: string; p_recipient: string; p_reference?: string | null; p_delete?: boolean }; Returns: number }
       correct_stock_movement: { Args: { p_source: string; p_id: string; p_version: number; p_quantity: number; p_date: string; p_staff: string; p_reference: string | null; p_reason: string; p_delete?: boolean }; Returns: number }
+      stock_audit_history: { Args: { p_start: string; p_end: string; p_offset?: number; p_limit?: number }; Returns: Json }
       move_room_stock_units: {
         Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
         Returns: string

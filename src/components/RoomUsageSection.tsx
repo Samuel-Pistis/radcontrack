@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export function RoomUsageSection({ shift, date, category }: { shift: ShiftType; date: Date; category: 'films' | 'supplies' }) {
+export function RoomUsageSection({ shift, date, category, selectedRoom, onDirtyChange }: { shift: ShiftType; date: Date; category: 'films' | 'supplies'; selectedRoom?: string; onDirtyChange?: (dirty: boolean) => void }) {
   const dateKey = format(date,'yyyy-MM-dd');
-  const [room,setRoom] = useState<string>('CT');
+  const [localRoom,setRoom] = useState<string>('CT');
+  const room = selectedRoom || localRoom;
   const [items,setItems] = useState<Tables<'stock_items'>[]>([]);
   const [stock,setStock] = useState<Tables<'room_stock'>[]>([]);
   const [quantities,setQuantities] = useState<Record<string,number>>({});
@@ -26,6 +27,7 @@ export function RoomUsageSection({ shift, date, category }: { shift: ShiftType; 
   const [message,setMessage] = useState('');
   const [error,setError] = useState('');
   const [dirty,setDirty] = useState(false);
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty,onDirtyChange]);
   const draftKey=`radcontrack-usage-units-v1-draft-${dateKey}-${room}-${shift}-${category}`;
   const load = useCallback(async () => {
     setLoading(true); setLoadFailed(true); setError('');
@@ -79,8 +81,8 @@ export function RoomUsageSection({ shift, date, category }: { shift: ShiftType; 
     window.dispatchEvent(new CustomEvent('radcontrack:film-updated'));
   };
   return <section className="dashboard-card p-5 space-y-4">
-    <div><h3 className="font-bold capitalize">{shift} shift: {category==='films'?'film printing':'supplies actually used'}</h3><p className="text-sm text-muted-foreground">Select a room, enter actual use and save. Leftovers stay in that room for the next shift.</p></div>
-    <div className="grid sm:grid-cols-3 gap-4"><div><Label>Room</Label><Select value={room} disabled={dirty||saving} onValueChange={setRoom}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{STOCK_ROOMS.map(option=><SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div><div><Label>Recorded by</Label><Input value={staff} disabled={loading||saving} onChange={e=>{setStaff(e.target.value);setDirty(true);}} placeholder="Staff full name" /></div>{category==='films'&&<div><Label>Patients printed for</Label><Input type="number" min="0" step="1" value={patients||''} placeholder="0" disabled={loading||saving} onChange={e=>{setPatients(Math.max(0,Math.floor(Number(e.target.value)||0)));setDirty(true);}} /></div>}</div>
+    <div><h3 className="font-bold capitalize">{room} · {shift} shift: {category==='films'?'film printing':'supplies actually used'}</h3><p className="text-sm text-muted-foreground">Select a room, enter actual use and save. Leftovers stay in that room for the next shift.</p></div>
+    <div className="grid sm:grid-cols-3 gap-4">{!selectedRoom && <div><Label>Room</Label><Select value={room} disabled={dirty||saving} onValueChange={setRoom}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{STOCK_ROOMS.map(option=><SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>}<div><Label>Recorded by</Label><Input value={staff} disabled={loading||saving} onChange={e=>{setStaff(e.target.value);setDirty(true);}} placeholder="Staff full name" /></div>{category==='films'&&<div><Label>Patients printed for</Label><Input type="number" min="0" step="1" value={patients||''} placeholder="0" disabled={loading||saving} onChange={e=>{setPatients(Math.max(0,Math.floor(Number(e.target.value)||0)));setDirty(true);}} /></div>}</div>
     {category==='supplies'&&<p className="text-sm text-muted-foreground">Enter actual ml administered and any ml discarded for CT, MRI and Gastrolux. Bottle equivalents calculate automatically: CT and Gastrolux 100 ml; MRI 15 ml. Usable leftovers stay in the room. Do not round the volume or enter a stock pick as usage.</p>}
     {version > 0 && <p className="rounded-lg border p-3 text-sm">This shift already has a saved record. Change an incorrect quantity or patient count below, then save the correction. Only the difference updates room stock. To reverse an incorrect usage amount, change that amount to 0 and save. Picks and store collections are corrected on the stock page.</p>}
     {error&&<p role="alert" className="text-destructive">{error}</p>}{message&&<p role="status" className="text-sm">{message}</p>}
