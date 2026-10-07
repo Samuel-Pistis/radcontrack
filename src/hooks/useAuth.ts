@@ -6,7 +6,7 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [permissions, setPermissions] = useState({ hasAccess: false, canManageStock: false });
+  const [permissions, setPermissions] = useState({ hasAccess: false, canManageStock: false, canManageStaff: false });
   const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [accessError, setAccessError] = useState('');
   const userId = user?.id;
@@ -14,13 +14,13 @@ export const useAuth = () => {
   useEffect(() => {
     let active = true;
     setPermissionsLoading(true);
-    setPermissions({ hasAccess: false, canManageStock: false });
+    setPermissions({ hasAccess: false, canManageStock: false, canManageStaff: false });
     setAccessError('');
     if (!userId) { setPermissionsLoading(false); return; }
     supabase.rpc('inventory_permissions').then(({data,error}) => {
       if (!active) return;
-      const result = data as { has_access?: boolean; can_manage_stock?: boolean } | null;
-      setPermissions({ hasAccess: result?.has_access === true, canManageStock: result?.can_manage_stock === true });
+      const result = data as { has_access?: boolean; can_manage_stock?: boolean; can_manage_staff?: boolean } | null;
+      setPermissions({ hasAccess: result?.has_access === true, canManageStock: result?.can_manage_stock === true, canManageStaff: result?.can_manage_staff === true });
       setAccessError(error ? 'Unable to check account access. Please try again.' : result?.has_access ? '' : 'Your account is waiting for administrator approval.');
       setPermissionsLoading(false);
     });

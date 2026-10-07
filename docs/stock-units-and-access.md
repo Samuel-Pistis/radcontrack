@@ -17,6 +17,8 @@ Receipt deletion is a soft deletion. Corrections and deletions retain before/aft
 
 No passwords are stored in source files or changed by this migration.
 
+The subsequent `20261007135815_stock_editor_access.sql` update grants the confirmed `honey.onabanjo@bthdc.com.ng` account the `stock_editor` role. It can manage store receipts and counts, but cannot approve staff logins. The original manager retains staff-access control and can disable Honey’s access. This update runs transactionally and cancels if Honey’s confirmed Auth account does not exist. Apply it before publishing the corresponding frontend update.
+
 ## Verification
 
 `scripts/stock-units-fixture.sql` plus `scripts/stock-units-tests.sql` exercise old-record conversion, preservation of existing room ml and films, unchanged CD/gloves quantities, receipt retry/correction/deletion, stale edits, same-day physical counts, insufficient balances, approved staff access, outsider/anonymous denial, clinical read/write access and metadata spoofing. Run them in a fresh local database after the three existing stock migrations and bootstrap. All test writes are rolled back.
