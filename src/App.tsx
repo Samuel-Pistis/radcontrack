@@ -16,7 +16,7 @@ import { Loader2 } from "lucide-react";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, hasAccess } = useAuth();
 
   if (loading) {
     return (
@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  if (!user || !hasAccess) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -34,7 +34,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AuthRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, hasAccess } = useAuth();
 
   if (loading) {
     return (
@@ -44,7 +44,7 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (user) {
+  if (user && hasAccess) {
     return <Navigate to="/" replace />;
   }
 

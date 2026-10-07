@@ -1,0 +1,14 @@
+alter table auth.users add column email text;
+alter table auth.users add column email_confirmed_at timestamptz;
+create table public.daily_contrast_data(date date primary key,data jsonb not null default '{}');
+create table public.contrast_usage_logs(id uuid primary key default gen_random_uuid(),volume_ml numeric not null);
+alter table public.daily_contrast_data enable row level security;
+alter table public.contrast_usage_logs enable row level security;
+grant select,insert,update,delete on public.daily_contrast_data,public.contrast_usage_logs to authenticated;
+update auth.users set email='btradiographers@gmail.com',email_confirmed_at=now();
+insert into auth.users values('22222222-2222-2222-2222-222222222222','staff@example.com',now()),('33333333-3333-3333-3333-333333333333','outsider@example.com',now());
+update public.stock_items set balance=case id when 'ct_contrast' then 2 when 'mri_contrast' then 3 when 'gastrolux' then 4 when 'film1714' then 5 when 'film1210' then 6 when 'cd' then 50 when 'cd_jacket' then 60 when 'gloves_pack' then 3 when 'gloves_piece' then 2 else 0 end;
+insert into public.stock_movements(batch_id,item_id,movement_type,quantity,balance_after,occurred_on,recipient_name,recorded_by) values(gen_random_uuid(),'gastrolux','receipt',4,4,current_date-1,'Existing record','11111111-1111-1111-1111-111111111111'),(gen_random_uuid(),'film1714','receipt',5,5,current_date-1,'Existing record','11111111-1111-1111-1111-111111111111');
+insert into public.room_stock(room,item_id,balance) values('Fluoroscopy','ct_contrast',200),('Fluoroscopy','mri_contrast',45),('Fluoroscopy','gastrolux',2),('Fluoroscopy','film1714',100);
+insert into public.room_stock_movements(batch_id,room,item_id,movement_type,change,balance_after,balance_known,occurred_on,staff_name,recorded_by) values(gen_random_uuid(),'Fluoroscopy','gastrolux','usage',-1,2,false,current_date-1,'Existing record','11111111-1111-1111-1111-111111111111');
+insert into public.stock_shift_usage(date,room,shift,category,quantities,version,recorded_by_name) values(current_date-1,'Fluoroscopy','morning','supplies','{"ct_contrast":20,"mri_contrast":15,"gastrolux":1}',1,'Existing record');
