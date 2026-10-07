@@ -1,3 +1,4 @@
+import { loadClinicalReport } from '@/lib/clinicalReport';
 import { useState, useEffect, useCallback } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,12 +72,7 @@ const ContrastUsage = () => {
     const startKey = format(start, 'yyyy-MM-dd');
     const endKey = format(end, 'yyyy-MM-dd');
 
-    const { data, error } = await supabase
-      .from('daily_contrast_data')
-      .select('date, data')
-      .gte('date', startKey)
-      .lte('date', endKey)
-      .order('date', { ascending: true });
+    const { data, error } = await loadClinicalReport(startKey, endKey);
 
     if (error) {
       toast({ title: 'Error', description: 'Failed to load data', variant: 'destructive' });

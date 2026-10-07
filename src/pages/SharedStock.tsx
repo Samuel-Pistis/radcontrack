@@ -19,11 +19,11 @@ type MovementType = 'receipt' | 'issue' | 'opening' | 'room_count';
 type DraftLine = { key: string; itemId: string; quantity: string };
 const newLine = (): DraftLine => ({ key: crypto.randomUUID(), itemId: '', quantity: '' });
 const typeLabels: Record<MovementType, string> = {
-  receipt: 'Stock received', issue: 'Picked for a room', opening: 'Store count', room_count: 'Room count',
+  receipt: 'Stock received', issue: 'Picked for a room', opening: 'Department stock count', room_count: 'Room count',
 };
 export type StockView = 'pick' | 'receive' | 'count' | 'balances' | 'history' | 'access';
 const viewTitles:Record<StockView,string> = {pick:'Pick for a room',receive:'Receive stock',count:'Count what is left',balances:'Stock balances',history:'Movement history',access:'Staff access'};
-const viewHelp:Record<StockView,string> = {pick:'Record items taken from the store into a room. This moves stock; it does not record usage.',receive:'Record what was actually received from the main store and who received it.',count:'Count the items physically present. This replaces the balance at the selected location.',balances:'See what remains in the store and each room. Uncounted locations are shown clearly.',history:'Review entries and correct mistakes beside the relevant record.',access:'Approve individual staff logins for daily picks and usage.'};
+const viewHelp:Record<StockView,string> = {pick:'Record items taken from department stock into a room. This moves stock; it does not record usage.',receive:'Record what was actually received from the main store and who received it.',count:'Count the items physically present. This replaces the balance at the selected location.',balances:'See what remains in department stock and each room. Uncounted locations are shown clearly.',history:'Review entries and correct mistakes beside the relevant record.',access:'Approve individual staff logins for daily picks and usage.'};
 
 export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
   const { user, canManageStock, canManageStaff, loading: accessLoading } = useAuth();
@@ -46,10 +46,10 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const [staffEmail, setStaffEmail] = useState('');
   const [staffAccessSaving, setStaffAccessSaving] = useState(false);
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate] = useState(new URLSearchParams(window.location.search).get('date') || format(new Date(), 'yyyy-MM-dd'));
   const [recipient, setRecipient] = useState('');
-  const [destination, setDestination] = useState('');
-  const [shift, setShift] = useState('');
+  const [destination, setDestination] = useState(new URLSearchParams(window.location.search).get('room') || '');
+  const [shift, setShift] = useState(new URLSearchParams(window.location.search).get('shift') || '');
   const [reference, setReference] = useState('');
   const [lines, setLines] = useState<DraftLine[]>([newLine()]);
   const [confirmed, setConfirmed] = useState(false);
@@ -103,7 +103,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
     const chosen = selectedLines.filter((line, index) => line.item && lines[index].quantity.trim() !== '' && (Number.isInteger(line.quantity) || (bottleCapacity(line.item.id) > 0 && Number.isFinite(line.quantity) && Math.abs(line.quantity * 100 - Math.round(line.quantity * 100)) < 0.00001)) && (isCount ? line.quantity >= 0 : line.quantity > 0));
     if (!date || recipient.trim().length < 2 || chosen.length !== lines.length ||
         new Set(chosen.map(line => line.item!.id)).size !== chosen.length ||
-        ((type === 'issue' || type === 'room_count') && !destination) || (type === 'issue' && !shift) || !confirmed) {
+        ((type === 'issue' || type === 'room_count') && !destination) || ((type === 'issue' || type === 'room_count') && !shift) || !confirmed) {
       setError('Enter a date, your name and quantities for distinct items. All contrast uses ml; films and CDs use individual counts. Counts can be zero. Daily picks need a room and shift; confirm before saving.');
       return;
     }
@@ -114,7 +114,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
       p_staff: recipient.trim(),
       p_lines: chosen.map(line => ({ item_id: line.item!.id, quantity: line.quantity })),
       p_room: type === 'issue' || type === 'room_count' ? destination : null,
-      p_shift: type === 'issue' ? shift : null,
+      p_shift: type === 'issue' || type === 'room_count' ? shift : null,
       p_reference: reference.trim() || null,
       p_request: requestId,
     });
@@ -158,23 +158,24 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
       {view === 'access' && !canManageStaff && <p role="alert">Staff access requires the administrator login.</p>}
       {error && <div role="alert" className="rounded-lg border border-red-300 bg-red-50 text-red-800 p-4">{error}</div>}
       {notice && <div role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-800 p-4">{notice}</div>}
+      {view==='pick' && destination && shift && <Link className="text-primary underline text-sm" to={`/?room=${encodeURIComponent(destination)}&shift=${shift}&date=${date}`}>Return to this room’s daily entry</Link>}
 
       {formVisible && <section className="dashboard-card p-5 space-y-5">
-        {view === 'count' && <div className="flex flex-wrap gap-2">{(['opening','room_count'] as const).filter(option=>canManageStock || option==='room_count').map(option => <Button key={option} type="button" variant={type === option ? 'default' : 'outline'} onClick={() => { setType(option); setConfirmed(false); setDate(format(new Date(), 'yyyy-MM-dd')); }}>{option === 'opening' ? 'In the store' : 'In a room'}</Button>)}</div>}
-        <p className="text-sm text-muted-foreground">Use ml for all contrast, individual films and CD pieces, and packs for gloves. 1 film pack = 100 films. {canManageStock ? 'Your stock-editor login can manage received stock.' : 'Store collections are managed by the authorised stock editor.'}</p>
+        {view === 'count' && <div className="flex flex-wrap gap-2">{(['opening','room_count'] as const).filter(option=>canManageStock || option==='room_count').map(option => <Button key={option} type="button" variant={type === option ? 'default' : 'outline'} onClick={() => { setType(option); setConfirmed(false); setDate(format(new Date(), 'yyyy-MM-dd')); }}>{option === 'opening' ? 'In department stock' : 'In a room'}</Button>)}</div>}
+        <p className="text-sm text-muted-foreground">Use ml for all contrast, individual films and CD pieces, and packs for gloves. 1 film pack = 100 films. {canManageStock ? 'Your stock-editor login can manage received stock.' : 'Main store collections are managed by the authorised stock editor.'}</p>
         <div className="grid md:grid-cols-3 gap-4">
           <div><Label htmlFor="stock-date">Date</Label><Input id="stock-date" type="date" value={date} onChange={event => setDate(event.target.value)} /></div>
           <div><Label htmlFor="stock-recipient">{type === 'receipt' ? 'Received by' : type === 'issue' ? 'Picked by' : 'Counted by'}</Label><Input id="stock-recipient" value={recipient} onChange={event => setRecipient(event.target.value)} placeholder="Staff full name" /></div>
           <div><Label htmlFor="stock-reference">Request or receipt reference (optional)</Label><Input id="stock-reference" value={reference} onChange={event => setReference(event.target.value)} placeholder="For example, STR-202609-00110" /></div>
         </div>
-        {(type === 'issue' || type === 'room_count') && <div className="grid sm:grid-cols-2 gap-4 max-w-xl"><div><Label>Room</Label><Select value={destination} onValueChange={setDestination}><SelectTrigger aria-label="Room"><SelectValue placeholder="Choose room" /></SelectTrigger><SelectContent>{STOCK_ROOMS.map(room => <SelectItem key={room} value={room}>{room}</SelectItem>)}</SelectContent></Select></div>{type === 'issue' && <div><Label>Shift receiving this pick</Label><Select value={shift} onValueChange={setShift}><SelectTrigger aria-label="Shift receiving this pick"><SelectValue placeholder="Choose shift" /></SelectTrigger><SelectContent>{STOCK_SHIFTS.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>}</div>}
+        {(type === 'issue' || type === 'room_count') && <div className="grid sm:grid-cols-2 gap-4 max-w-xl"><div><Label>Room</Label><Select value={destination} onValueChange={setDestination}><SelectTrigger aria-label="Room"><SelectValue placeholder="Choose room" /></SelectTrigger><SelectContent>{STOCK_ROOMS.map(room => <SelectItem key={room} value={room}>{room}</SelectItem>)}</SelectContent></Select></div>{(type === 'issue' || type === 'room_count') && <div><Label>{type === 'issue' ? 'Shift receiving this pick' : 'Shift of this count'}</Label><Select value={shift} onValueChange={setShift}><SelectTrigger aria-label="Shift receiving this pick"><SelectValue placeholder="Choose shift" /></SelectTrigger><SelectContent>{STOCK_SHIFTS.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>}</div>}
         {(type === 'opening' || type === 'room_count') && <p className="text-sm text-amber-800 bg-amber-50 rounded-lg p-3">Count what is physically here now, including any recent collections. This replaces the recorded balance at this location; it does not add more stock. Room film counts use individual films, not packs.</p>}
         {type === 'receipt' && <p className="text-sm text-muted-foreground">You can save a collection before counting existing stock. The full balance will remain unconfirmed until counted. Do not add a collection again if a later physical count already included it.</p>}
         <div className="space-y-3"><div className="flex items-center justify-between"><h4 className="font-semibold">Items</h4><Button type="button" variant="outline" size="sm" onClick={() => setLines(current => [...current, newLine()])}><Plus className="w-4 h-4 mr-1" />Add item</Button></div>
           {lines.map((line, index) => { const item=items.find(candidate => candidate.id === line.itemId); const quantity=Number(line.quantity) || 0; return <div key={line.key} className="grid sm:grid-cols-[minmax(0,1fr)_9rem_10rem_2.5rem] gap-3 items-end rounded-lg border p-3">
             <div><Label>Item {index + 1}</Label><Select value={line.itemId} onValueChange={value => setLine(line.key, { itemId: value })}><SelectTrigger aria-label={`Item ${index + 1}`}><SelectValue placeholder="Choose item" /></SelectTrigger><SelectContent>{items.map(candidate => <SelectItem key={candidate.id} value={candidate.id}>{candidate.name} ({candidate.unit})</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Quantity {item ? `(${item.unit})` : ''}</Label><Input aria-label={`Quantity for item ${index + 1}`} type="number" min={type === 'opening' || type === 'room_count' ? '0' : item && bottleCapacity(item.id) ? '0.01' : '1'} step={item && bottleCapacity(item.id) ? '0.01' : '1'} value={line.quantity} onChange={event => setLine(line.key, { quantity: event.target.value })} /></div>
-            <div className="text-sm text-muted-foreground">{item ? type === 'room_count' ? `Room count: ${quantity} ${roomUnit(item.id,item.unit)}` : <><span>Store: {item.opening_recorded ? `${item.balance} ${item.unit}` : 'balance awaiting stock count'}</span><br />{type === 'opening' ? `Counted now: ${quantity} ${item.unit}` : type === 'issue' ? `To room: ${toRoomUnits(item.id,quantity)} ${roomUnit(item.id,item.unit)}` : `Adding: ${quantity} ${item.unit}`}</> : 'Select an item'}</div>
+            <div className="text-sm text-muted-foreground">{item ? type === 'room_count' ? `Room count: ${quantity} ${roomUnit(item.id,item.unit)}` : <><span>Department stock: {item.opening_recorded ? `${item.balance} ${item.unit}` : 'balance awaiting stock count'}</span><br />{type === 'opening' ? `Counted now: ${quantity} ${item.unit}` : type === 'issue' ? `To room: ${toRoomUnits(item.id,quantity)} ${roomUnit(item.id,item.unit)}` : `Adding: ${quantity} ${item.unit}`}</> : 'Select an item'}</div>
             <Button type="button" variant="ghost" size="icon" aria-label={`Remove item ${index + 1}`} disabled={lines.length === 1} onClick={() => setLines(current => current.filter(candidate => candidate.key !== line.key))}><Trash2 className="w-4 h-4" /></Button>
           </div>; })}
         </div>
@@ -185,7 +186,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
 
       {editing && <section ref={editorRef} className="dashboard-card p-5 space-y-4" aria-label="Correct stock entry">
         <h3 className="font-bold text-lg">Correct stock entry: {items.find(item=>item.id===editing.item_id)?.name || editing.item_id}</h3>
-        <p className="text-sm text-muted-foreground">{editing.movement_type === 'issue' ? 'A pick correction updates the store and receiving room by equal, opposite amounts.' : 'A correction updates the affected balance and keeps the original record in the audit history.'} Older entries covered by a newer physical count require a new count instead.</p>
+        <p className="text-sm text-muted-foreground">{editing.movement_type === 'issue' ? 'A pick correction updates department stock and the receiving room by equal, opposite amounts.' : 'A correction updates the affected balance and keeps the original record in the audit history.'} Older entries covered by a newer physical count require a new count instead.</p>
         <div className="grid md:grid-cols-4 gap-3"><label>Date<Input type="date" disabled={editing.movement_type === 'opening' || editing.movement_type === 'count'} value={editDate} onChange={e=>setEditDate(e.target.value)} /></label><label>Quantity ({items.find(item=>item.id===editing.item_id)?.unit})<Input type="number" min={editing.movement_type === 'opening' || editing.movement_type === 'count' ? '0' : bottleCapacity(editing.item_id)?'0.01':'1'} step={bottleCapacity(editing.item_id)?'0.01':'1'} value={editQuantity} onChange={e=>setEditQuantity(e.target.value)} /></label><label>Received, picked or counted by<Input value={editRecipient} onChange={e=>setEditRecipient(e.target.value)} /></label>{editing.source === 'store' && <label>Reference<Input value={editReference} onChange={e=>setEditReference(e.target.value)} /></label>}</div>
         <label className="block">Reason for correction<Input value={editReason} onChange={e=>setEditReason(e.target.value)} placeholder="For example, entered 10000 instead of 100 films" /></label>
         {editing.item_id.startsWith('film') && <p className="text-sm text-muted-foreground">{Number(editQuantity) || 0} films = {(Number(editQuantity) || 0) / 100} packs (100 films per pack).</p>}
@@ -201,7 +202,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
           const total=item.balance+rooms.reduce((sum,row) => sum+(row?.balance || 0),0);
           const known=item.opening_recorded && rooms.every(row => row?.counted_on);
           return <article key={item.id} className="py-5"><h2 className="font-semibold mb-3">{item.name} <span className="text-sm font-normal text-muted-foreground">({item.unit})</span></h2><dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div><dt className="text-sm text-muted-foreground">Store</dt><dd className="font-medium">{item.opening_recorded ? item.balance : 'Awaiting count'}</dd></div>
+            <div><dt className="text-sm text-muted-foreground">Department stock</dt><dd className="font-medium">{item.opening_recorded ? item.balance : 'Awaiting count'}</dd></div>
             {rooms.map((row,index) => <div key={STOCK_ROOMS[index]}><dt className="text-sm text-muted-foreground">{STOCK_ROOMS[index]}</dt><dd className="font-medium">{row?.counted_on ? row.balance : 'Awaiting count'}</dd></div>)}
             <div><dt className="text-sm text-muted-foreground">Total left</dt><dd className="font-semibold">{known ? Number(total.toFixed(2)) : 'Unconfirmed'}</dd></div>
           </dl></article>;
@@ -210,15 +211,15 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
       </section>
       </>}
       {view === 'history' && <>
-        <div className="flex flex-wrap gap-2"><Button variant={historyLocation === 'store' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('store');setHistoryPage(0);setEditing(null);}}>Store entries and daily picks</Button><Button variant={historyLocation === 'room' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('room');setHistoryPage(0);setEditing(null);}}>Room counts and usage</Button></div>
-      {historyLocation === 'room' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">Room picks, usage and counts</h3><p className="text-sm text-muted-foreground">Correct room counts here. Edit daily picks under Recent store movements. To correct actual usage, reopen its date, room and shift on the <Link className="underline" to="/">daily entry page</Link>.</p></div>
+        <div className="flex flex-wrap gap-2"><Button variant={historyLocation === 'store' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('store');setHistoryPage(0);setEditing(null);}}>Department entries and daily picks</Button><Button variant={historyLocation === 'room' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('room');setHistoryPage(0);setEditing(null);}}>Room counts and usage</Button></div>
+      {historyLocation === 'room' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">Room picks, usage and counts</h3><p className="text-sm text-muted-foreground">Correct room counts here. Edit daily picks under Recent department movements. To correct actual usage, reopen its date, room and shift on the <Link className="underline" to="/">daily entry page</Link>.</p></div>
         <div className="divide-y">{roomMovements.map(row => <article key={row.id} className="p-5 space-y-3">
           <div className="flex flex-wrap justify-between gap-3"><div><h4 className="font-semibold">{items.find(item => item.id === row.item_id)?.name || row.item_id}</h4><p className="text-sm text-muted-foreground">{row.occurred_on} · {row.room} · {row.shift} · {row.voided_at ? 'Deleted pick' : row.movement_type}</p></div>
             {row.movement_type === 'count' && !row.voided_at && (canManageStock || row.recorded_by === user?.id) && <Button size="sm" variant="outline" disabled={saving || loading} onClick={() => beginCorrection({source:'room',id:row.id,item_id:row.item_id,quantity:row.balance_after,occurred_on:row.occurred_on,recipient_name:row.staff_name,reference:null,version:row.version,movement_type:'count'})}>Correct room count</Button>}
           </div><dl className="grid sm:grid-cols-3 gap-3 text-sm"><div><dt className="text-muted-foreground">Change</dt><dd>{row.change > 0 ? '+' : ''}{stockAmount(row.item_id,row.change)}</dd></div><div><dt className="text-muted-foreground">Room balance when recorded</dt><dd>{row.balance_known ? stockAmount(row.item_id,row.balance_after) : 'Awaiting count'}</dd></div><div><dt className="text-muted-foreground">Recorded by</dt><dd>{row.staff_name}</dd></div></dl>
         </article>)}{!loading && roomMovements.length === 0 && <p className="p-5 text-muted-foreground">No room movements recorded yet.</p>}</div>
       </section>}
-      {historyLocation === 'store' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">Recent store movements</h3><p className="text-sm text-muted-foreground">Edit collections and daily picks, or correct a stock count here. Original records remain in the audit history.</p></div>
+      {historyLocation === 'store' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">Recent department movements</h3><p className="text-sm text-muted-foreground">Edit collections and daily picks, or correct a stock count here. Original records remain in the audit history.</p></div>
         <div className="divide-y">{movements.map(row => <article key={row.id} className="p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><h4 className="font-semibold">{items.find(item => item.id === row.item_id)?.name || row.item_id}</h4><p className="text-sm text-muted-foreground">{row.occurred_on} · {row.voided_at ? 'Deleted entry' : typeLabels[row.movement_type as MovementType]}</p></div>

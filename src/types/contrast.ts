@@ -37,8 +37,8 @@ export interface DailyData {
 }
 
 export const CONTRAST_LABELS: Record<ContrastType, string> = {
-  jodascan300: 'Jodascan 300',
-  hexopack350: 'Hexopack 350',
+  jodascan300: 'CT Contrast (earlier Jodascan)',
+  hexopack350: 'CT Contrast',
   gastrolux: 'Gastrolux',
   mriContrast: 'MRI Contrast',
 };
