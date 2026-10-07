@@ -21,7 +21,7 @@ const typeLabels: Record<MovementType, string> = {
 };
 
 export default function SharedStock() {
-  const { canManageStock, loading: accessLoading } = useAuth();
+  const { canManageStock, canManageStaff, loading: accessLoading } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [roomStock, setRoomStock] = useState<Tables<'room_stock'>[]>([]);
@@ -173,7 +173,7 @@ export default function SharedStock() {
         <div className="flex gap-3"><Button disabled={saving} onClick={()=>void editReceipt(false)}>Save correction</Button><Button disabled={saving} variant="outline" onClick={()=>setEditing(null)}>Cancel</Button></div>
         <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={deleteConfirmed} onChange={e=>setDeleteConfirmed(e.target.checked)} />Remove this receipt from active stock</label><Button variant="destructive" disabled={saving||!deleteConfirmed} onClick={()=>void editReceipt(true)}>Delete receipt</Button>
       </section>}
-      {canManageStock && <section className="dashboard-card p-5 space-y-3"><h3 className="font-bold text-lg">Staff login access</h3><p className="text-sm text-muted-foreground">Staff create and confirm their own login on the sign-in page. Approve their email here to allow daily picks and usage. Staff cannot add, edit or delete store collections.</p><label>Staff email<Input type="email" value={staffEmail} onChange={e=>setStaffEmail(e.target.value)} placeholder="Staff member’s personal email" /></label><div className="flex gap-3"><Button disabled={staffAccessSaving||!staffEmail.trim()} onClick={()=>void setStaffAccess(true)}>Approve staff login</Button><Button variant="outline" disabled={staffAccessSaving||!staffEmail.trim()} onClick={()=>void setStaffAccess(false)}>Remove staff access</Button></div></section>}
+      {canManageStaff && <section className="dashboard-card p-5 space-y-3"><h3 className="font-bold text-lg">Staff login access</h3><p className="text-sm text-muted-foreground">Staff create and confirm their own login on the sign-in page. Approve their email here to allow daily picks and usage. Staff cannot add, edit or delete store collections.</p><label>Staff email<Input type="email" value={staffEmail} onChange={e=>setStaffEmail(e.target.value)} placeholder="Staff member’s personal email" /></label><div className="flex gap-3"><Button disabled={staffAccessSaving||!staffEmail.trim()} onClick={()=>void setStaffAccess(true)}>Approve staff login</Button><Button variant="outline" disabled={staffAccessSaving||!staffEmail.trim()} onClick={()=>void setStaffAccess(false)}>Remove staff access</Button></div></section>}
       <section className="dashboard-card p-5"><div className="flex items-center justify-between mb-4"><h3 className="font-bold text-lg">Current shared balances</h3><span className="text-sm text-muted-foreground">Refreshes while this page is open</span></div>
         {loading ? <p className="text-muted-foreground">Loading stock…</p> : <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{items.map(item => <div key={item.id} className="rounded-lg border p-4"><p className="text-sm text-muted-foreground">{item.name}</p>{item.opening_recorded ? <p className="text-2xl font-bold">{item.balance} <span className="text-sm font-normal">{item.unit}</span></p> : <p className="font-semibold text-amber-700 mt-2">Balance awaiting stock count</p>}</div>)}</div>}
       </section>

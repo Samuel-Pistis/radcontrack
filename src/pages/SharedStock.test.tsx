@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SharedStock from './SharedStock';
 
-const access = vi.hoisted(() => ({ canManageStock: false }));
+const access = vi.hoisted(() => ({ canManageStock: false, canManageStaff: false }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ ...access, loading: false }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: {
   from: (name: string) => {
@@ -18,6 +18,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 describe('shared stock access', () => {
   it('lets staff pick and count rooms, while hiding store-management controls', async () => {
     access.canManageStock = false;
+    access.canManageStaff = false;
     render(<MemoryRouter><SharedStock /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Picked for daily use' })).toBeInTheDocument();
@@ -26,12 +27,31 @@ describe('shared stock access', () => {
     expect(screen.queryByRole('button', { name: 'Count store stock now' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Approve staff login' })).not.toBeInTheDocument();
   });
-  it('provides store-management and staff-approval controls to the administrator', async () => {
+  it('honours the independent stock and staff permissions', async () => {
     access.canManageStock = true;
+    access.canManageStaff = true;
     render(<MemoryRouter><SharedStock /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: 'Collected from store' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Count store stock now' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Approve staff login' })).toBeInTheDocument();
+  });
+  it('gives a stock editor collection access without staff-approval controls', async () => {
+    access.canManageStock = true;
+    access.canManageStaff = false;
+    render(<MemoryRouter><SharedStock /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Collected from store' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Approve staff login' })).not.toBeInTheDocument();
+  });
+  it('keeps staff approval for the shared administrator without store editing', async () => {
+    access.canManageStock = false;
+    access.canManageStaff = true;
+    render(<MemoryRouter><SharedStock /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('Gastrolux')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Approve staff login' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Picked for daily use' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Collected from store' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Count store stock now' })).not.toBeInTheDocument();
   });
 });
