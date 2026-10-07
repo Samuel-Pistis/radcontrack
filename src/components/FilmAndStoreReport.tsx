@@ -35,7 +35,7 @@ export function FilmAndStoreReport({ start, end }: { start: Date; end: Date }) {
         usage.push(...result.data);if(result.data.length<1000)break;
       }
       for(let offset=0;;offset+=1000){
-        const result=await supabase.from('stock_movements').select('*').eq('movement_type','issue').gte('occurred_on',startKey).lte('occurred_on',endKey).order('created_at').order('id').range(offset,offset+999);
+        const result=await supabase.from('stock_movements').select('*').eq('movement_type','issue').is('voided_at',null).gte('occurred_on',startKey).lte('occurred_on',endKey).order('created_at').order('id').range(offset,offset+999);
         if(result.error){if(active)setReportError(result.error.message);return;}
         movements.push(...result.data);if(result.data.length<1000)break;
       }
