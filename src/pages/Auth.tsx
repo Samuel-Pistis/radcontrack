@@ -12,7 +12,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [registering, setRegistering] = useState(false);
-  const { signIn, signUp, signOut, user, accessError } = useAuth();
+  const { signIn, signUp, signOut, user, accessError, retryAccess } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,7 +25,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: 'Sign-in failed',
-        description: 'Invalid email or password. Please try again.',
+        description: error.message || 'Unable to sign in. Please try again.',
         variant: 'destructive',
       });
     } else if (registering) {
@@ -42,7 +42,8 @@ const Auth = () => {
           <p className="text-sm text-muted-foreground">Sign in to continue</p>
         </div>
 
-        {user ? <div className="space-y-4"><p role="alert">{accessError}</p><Button onClick={()=>void signOut()}>Sign out and try another account</Button></div> : <form onSubmit={handleSubmit} className="space-y-4">
+        {accessError && <div className="space-y-3"><p role="alert">{accessError}</p><Button variant="outline" onClick={retryAccess}>Retry login check</Button></div>}
+        {user ? <Button onClick={async()=>{const {error}=await signOut();if(error)toast({title:'Unable to sign out',description:error.message,variant:'destructive'});}}>Sign out and try another account</Button> : <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
