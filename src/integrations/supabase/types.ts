@@ -85,7 +85,7 @@ export type Database = {
           id: string; batch_id: string; item_id: string; movement_type: string;
           quantity: number; balance_after: number; occurred_on: string; recipient_name: string;
           destination: string | null; reference: string | null;
-          recorded_by: string; created_at: string; balance_known: boolean; shift: string | null
+          recorded_by: string; created_at: string; balance_known: boolean; shift: string | null; version: number; voided_at: string | null
         }
         Insert: {
           id?: string; batch_id: string; item_id: string; movement_type: string;
@@ -124,6 +124,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      inventory_permissions: { Args: Record<string, never>; Returns: Json }
+      set_stock_staff: { Args: { p_email: string; p_active: boolean }; Returns: undefined }
+      edit_stock_receipt: { Args: { p_id: string; p_version: number; p_quantity: number; p_date: string; p_recipient: string; p_reference?: string | null; p_delete?: boolean }; Returns: number }
+      move_room_stock_units: {
+        Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
+        Returns: string
+      }
+      save_room_usage_units: {
+        Args: { p_date: string; p_room: string; p_shift: string; p_category: string; p_quantities: Json; p_patients: number; p_staff: string; p_version: number; p_volumes: Json }
+        Returns: number
+      }
       move_room_stock_volume: {
         Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
         Returns: string

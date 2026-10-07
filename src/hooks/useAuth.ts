@@ -6,6 +6,26 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [permissions, setPermissions] = useState({ hasAccess: false, canManageStock: false });
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
+  const [accessError, setAccessError] = useState('');
+  const userId = user?.id;
+
+  useEffect(() => {
+    let active = true;
+    setPermissionsLoading(true);
+    setPermissions({ hasAccess: false, canManageStock: false });
+    setAccessError('');
+    if (!userId) { setPermissionsLoading(false); return; }
+    supabase.rpc('inventory_permissions').then(({data,error}) => {
+      if (!active) return;
+      const result = data as { has_access?: boolean; can_manage_stock?: boolean } | null;
+      setPermissions({ hasAccess: result?.has_access === true, canManageStock: result?.can_manage_stock === true });
+      setAccessError(error ? 'Unable to check account access. Please try again.' : result?.has_access ? '' : 'Your account is waiting for administrator approval.');
+      setPermissionsLoading(false);
+    });
+    return () => { active = false; };
+  }, [userId]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -44,5 +64,5 @@ export const useAuth = () => {
     return { error };
   };
 
-  return { user, session, loading, signIn, signUp, signOut };
+  return { user, session, loading: loading || permissionsLoading, ...permissions, accessError, signIn, signUp, signOut };
 };
