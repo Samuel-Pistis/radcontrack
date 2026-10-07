@@ -114,7 +114,7 @@ export type Database = {
         Relationships: []
       }
       room_stock_movements: {
-        Row: { id: string; batch_id: string; room: string; item_id: string; movement_type: string; change: number; balance_after: number; balance_known: boolean; occurred_on: string; shift: string | null; staff_name: string; recorded_by: string; created_at: string }
+        Row: { id: string; batch_id: string; room: string; item_id: string; movement_type: string; change: number; balance_after: number; balance_known: boolean; occurred_on: string; shift: string | null; staff_name: string; recorded_by: string; created_at: string; version: number; voided_at: string | null }
         Insert: { room: string; item_id: string; movement_type: string; change: number; balance_after: number; balance_known: boolean; occurred_on: string; shift?: string | null; staff_name: string; recorded_by: string; batch_id: string }
         Update: { change?: number }
         Relationships: []
@@ -127,6 +127,7 @@ export type Database = {
       inventory_permissions: { Args: Record<string, never>; Returns: Json }
       set_stock_staff: { Args: { p_email: string; p_active: boolean }; Returns: undefined }
       edit_stock_receipt: { Args: { p_id: string; p_version: number; p_quantity: number; p_date: string; p_recipient: string; p_reference?: string | null; p_delete?: boolean }; Returns: number }
+      correct_stock_movement: { Args: { p_source: string; p_id: string; p_version: number; p_quantity: number; p_date: string; p_staff: string; p_reference: string | null; p_reason: string; p_delete?: boolean }; Returns: number }
       move_room_stock_units: {
         Args: { p_type: string; p_date: string; p_staff: string; p_lines: Json; p_room?: string | null; p_shift?: string | null; p_reference?: string | null; p_request?: string | null }
         Returns: string
