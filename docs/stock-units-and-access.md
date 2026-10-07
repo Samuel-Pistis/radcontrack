@@ -17,7 +17,9 @@ Receipt deletion is a soft deletion. Corrections and deletions retain before/aft
 
 No passwords are stored in source files or changed by this migration.
 
-The subsequent `20261007135815_stock_editor_access.sql` update grants the confirmed `honey.onabanjo@bthdc.com.ng` account the `stock_editor` role. It can manage store receipts and counts, but cannot approve staff logins. The original manager retains staff-access control and can disable Honey’s access. This update runs transactionally and cancels if Honey’s confirmed Auth account does not exist. Apply it before publishing the corresponding frontend update.
+The subsequent `20261007135815_stock_editor_access.sql` update removes store-stock management from the shared `btradiographers@gmail.com` manager account. That account retains daily picks, usage and staff-login approval. Store collections, counts, receipt corrections and deletion require the separate `stock_editor` role. Apply this restriction before publishing the corresponding frontend; it does not require Honey to have registered.
+
+After Honey creates and confirms `honey.onabanjo@bthdc.com.ng`, run `supabase/assign-honey-stock-editor.sql` to activate her stock editor access. This separate assignment cancels if the verified login is missing. Honey cannot approve staff; the shared manager can remove her access. Passwords remain private to each account.
 
 ## Verification
 
