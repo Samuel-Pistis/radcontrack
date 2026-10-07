@@ -12,6 +12,7 @@ import Inventory from "./pages/Inventory";
 import SharedStock from "./pages/SharedStock";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { AuthProvider } from "./components/AuthProvider";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -67,6 +69,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
