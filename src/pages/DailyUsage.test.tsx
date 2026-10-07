@@ -14,6 +14,8 @@ describe('daily usage flow',()=>{
     fireEvent.click(screen.getByRole('button',{name:'night'}));
     fireEvent.click(screen.getByRole('button',{name:'Contrast and supplies'}));
     expect(screen.getByText('MRI/night/supplies')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button',{name:'Mammography'}));
+    expect(screen.getByText('Mammography/night/supplies')).toBeInTheDocument();
     expect(screen.queryByText('Movement history')).not.toBeInTheDocument();
     expect(screen.queryByRole('link',{name:'Audit history'})).not.toBeInTheDocument();
   });
