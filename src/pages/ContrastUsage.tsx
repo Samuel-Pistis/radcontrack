@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
+import { AppNavigation } from '@/components/AppNavigation';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar as CalendarIcon, Download, ArrowLeft, Sun, Moon, FileText, BarChart3 } from 'lucide-react';
+import { Calendar as CalendarIcon, Download, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavLink } from '@/components/NavLink';
 import { ContrastType, ShiftType, DailyData, CONTRAST_LABELS } from '@/types/contrast';
@@ -31,8 +31,8 @@ interface DailyRow {
 }
 
 const ContrastUsage = () => {
-  const { signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+
+
   const { toast } = useToast();
 
   const [rangeMode, setRangeMode] = useState<RangeMode>('week');
@@ -163,29 +163,10 @@ const ContrastUsage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <NavLink to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm">Daily Log</span>
-              </NavLink>
-              <FileText className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-bold text-foreground">Operations Reports</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </Button>
-              <Button variant="outline" size="sm" onClick={signOut}>Sign Out</Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <AppNavigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Date Range Selection */}
+        <div><h1 className="text-2xl font-bold">Reports and reconciliation</h1><div className="flex flex-wrap gap-4 mt-2 text-sm"><NavLink className="text-primary underline" to="/stock/balances">Current balances</NavLink><NavLink className="text-primary underline" to="/stock/history">Movement history</NavLink><NavLink className="text-primary underline" to="/weekly-trend">Contrast trends</NavLink><NavLink className="text-primary underline" to="/inventory">Earlier browser stock records</NavLink></div></div>
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
