@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      room_shift_reviews: {
+        Row: {date:string;room:string;shift:string;details:Json;physical:Json;note:string;staff:string;stock_token:string;finished:boolean;version:number;updated_at:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       contrast_usage_logs: {
         Row: {
           contrast_type: string
@@ -124,6 +130,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      shift_context: {Args:{p_date:string;p_room:string;p_shift:string};Returns:Json}
+      save_shift: {Args:{p_date:string;p_room:string;p_shift:string;p_details:Json;p_staff:string;p_version:number;p_film_version:number;p_supply_version:number;p_finish:boolean;p_physical:Json;p_note:string;p_token:string};Returns:number}
       inventory_permissions: { Args: Record<string, never>; Returns: Json }
       set_stock_staff: { Args: { p_email: string; p_active: boolean }; Returns: undefined }
       edit_stock_receipt: { Args: { p_id: string; p_version: number; p_quantity: number; p_date: string; p_recipient: string; p_reference?: string | null; p_delete?: boolean }; Returns: number }

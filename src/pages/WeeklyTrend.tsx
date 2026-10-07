@@ -1,3 +1,4 @@
+import { loadClinicalReport } from '@/lib/clinicalReport';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
@@ -81,11 +82,7 @@ const WeeklyTrend = () => {
       const startStr = format(currentWeekStart, 'yyyy-MM-dd');
       const endStr = format(weekEnd, 'yyyy-MM-dd');
 
-      const { data, error } = await supabase
-        .from('daily_contrast_data')
-        .select('date, data')
-        .gte('date', startStr)
-        .lte('date', endStr);
+      const { data, error } = await loadClinicalReport(startStr, endStr);
 
       if (!error && data) {
         setRawRows(data);
