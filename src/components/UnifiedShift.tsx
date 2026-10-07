@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { contrasts, quantityUsed, validateDetail, type ShiftDetails } from '@/lib/shiftWorkflow';
-import { isFilm } from '@/lib/roomStock';
+import { bottleCapacity, isFilm } from '@/lib/roomStock';
 import type { Json } from '@/integrations/supabase/types';
 
 type Flow = {id:string;name:string;unit:string;opening:number;received:number;adjustment:number;remaining:number;known:boolean};
@@ -87,7 +87,7 @@ export function UnifiedShift({date,room,shift,onDirtyChange}:{date:string;room:s
   } catch(e){setError(e instanceof Error?e.message:'Unable to save. Your entry is still here.');}
   finally{setBusy(false);}
  };
- const field=(item:Flow,key:'used'|'waste'|'patients',label:string)=><label className="block text-sm" key={key}>{label}<Input aria-label={`${item.name} ${label}`} className="mt-1 w-28" type="number" min="0" step={key==='patients'||!contrasts.includes(item.id)?1:0.01} disabled={busy} value={details[item.id]?.[key]??''} placeholder="Enter amount" onChange={e=>change(item.id,key,e.target.value)}/></label>;
+
  return <section className="space-y-7">
   <div className="flex flex-wrap items-end justify-between gap-4"><label className="text-sm">Recorded by<Input value={staff} disabled={busy} placeholder="Your full name" onChange={e=>{setStaff(e.target.value);setDirty(true);}} /></label><p className="text-sm">{finished?'Shift finished':versions.review?'Saved, review before finishing':'New shift entry'}</p></div>
   <p className="text-sm text-muted-foreground">Leftovers carry forward automatically. <Link className="underline text-primary" onClick={e=>{if(dirty){e.preventDefault();setError('Save progress before recording a top-up.');}}} to={`/stock/pick?room=${encodeURIComponent(room)}&shift=${shift}&date=${date}`}>Pick or top up this room</Link>, then reload this shift.</p>
@@ -97,18 +97,25 @@ export function UnifiedShift({date,room,shift,onDirtyChange}:{date:string;room:s
    const items=context.items.filter(i=>(filter as (id:string)=>boolean)(i.id));if(!items.length)return null;
    return <section key={title as string} className="border-t pt-5 space-y-4"><h2 className="text-lg font-bold">{title as string}</h2>
     {title==='Films printed'&&<p className="text-sm text-muted-foreground">Include reprints in films printed. Count patients separately for each size; do not count the same patient again for a reprint.</p>}
-    {items.map(item=><div key={item.id} className="border-b pb-5 space-y-3">
-     <h3 className="font-semibold">{item.name} <span className="font-normal text-muted-foreground">({item.unit})</span></h3>
-     {!details[item.id] && saved[item.id]>0 && <p className="text-sm">Earlier recorded depletion: {saved[item.id]} {item.unit}. Enter the patient-use and wastage breakdown to review it. It stays unchanged until you enter a correction.</p>}
-     <p className="text-sm text-muted-foreground">Carried over: {item.opening} · Received this shift: {item.received}{item.adjustment!==0?` · Physical count adjustment: ${item.adjustment}`:''} · Total available: {Number((item.opening+item.received+item.adjustment).toFixed(2))}{!item.known?' (opening balance unconfirmed)':''}</p>
-     <div className="flex flex-wrap gap-5 items-end">{field(item,'used',isFilm(item.id)?'Films printed':contrasts.includes(item.id)?'Used for patients (ml)':'Used this shift')}
-      {(contrasts.includes(item.id)||isFilm(item.id))&&field(item,'patients',isFilm(item.id)?'Patients printed for':'Number of patients')}
-      {contrasts.includes(item.id)&&field(item,'waste','Wastage (ml)')}
-      <p className="text-sm pb-2">Remaining: <strong>{remaining(item)} {item.unit}</strong></p>
-      <Button disabled={busy} variant="outline" onClick={()=>{setDetails(prev=>({...prev,[item.id]:{used:0,waste:0,patients:0,reviewed:true}}));setPhysical({});setDirty(true);setFinished(false);}}>None used</Button>
-     </div>
-     <label className="flex gap-2 text-sm"><input type="checkbox" disabled={busy} checked={details[item.id]?.reviewed||false} onChange={e=>{setDetails(prev=>({...prev,[item.id]:{...prev[item.id],reviewed:e.target.checked}}));setDirty(true);setFinished(false);}}/>I have checked this item</label>
-    </div>)}
+    <div className="overflow-x-auto rounded-lg border border-border"><table aria-label={title as string} className="w-full border-collapse">
+     <thead><tr className="bg-muted/50"><th scope="col" className="p-3 text-left text-sm min-w-[180px] border-b">Row Type</th>{items.map(item=><th scope="colgroup" key={item.id} colSpan={title==='Contrast'?2:1} className="p-3 text-center text-sm font-semibold border-b border-l min-w-[150px]">{item.name}</th>)}</tr>
+     <tr className="bg-muted/30"><th className="border-b" />{items.map(item=><Fragment key={item.id}><th scope="col" className="p-2 text-xs text-muted-foreground border-b border-l">{title==='Contrast'?'Total (mls)':item.unit}</th>{title==='Contrast'&&<th scope="col" className="p-2 text-xs text-muted-foreground border-b min-w-[110px]">Bottle equivalent</th>}</Fragment>)}</tr></thead>
+     <tbody>
+      {(['Carried Over','Additional Stock Received',...(items.some(i=>i.adjustment!==0)?['Physical Count Adjustment']:[]),'Total Qty Available','Total Consumption',...(title==='Contrast'?['Wastage']:[]),...(title==='Other consumables'?[]:['No. of Patients']),'Outstanding Stock','Review'] as const).map(label=><tr key={label} className={label==='Outstanding Stock'?'bg-accent/30':label==='No. of Patients'?'bg-accent/10':'hover:bg-muted/20'}>
+       <th scope="row" className="p-3 text-sm text-left font-medium border-b">{label}{label==='Total Consumption'&&title==='Contrast'&&<span className="block text-xs font-normal text-muted-foreground">Given to patients</span>}{label==='Outstanding Stock'&&<span className="block text-xs font-normal text-muted-foreground">Available − used{title==='Contrast'?' − wastage':''}</span>}</th>
+       {items.map(item=>{
+        const key=label==='Total Consumption'?'used':label==='Wastage'?'waste':label==='No. of Patients'?'patients':null;
+        const value=label==='Carried Over'?item.opening:label==='Additional Stock Received'?item.received:label==='Physical Count Adjustment'?item.adjustment:label==='Total Qty Available'?Number((item.opening+item.received+item.adjustment).toFixed(2)):label==='Outstanding Stock'?remaining(item):key?details[item.id]?.[key]:0;
+        const merged=label==='No. of Patients'||label==='Review';
+        return <Fragment key={item.id}><td colSpan={title==='Contrast'&&merged?2:1} className="p-2 text-center border-b border-l">
+         {label==='Review'?<div className="space-y-2"><Button variant="outline" size="sm" disabled={busy} onClick={()=>{setDetails(prev=>({...prev,[item.id]:{used:0,waste:0,patients:0,reviewed:true}}));setPhysical({});setDirty(true);setFinished(false);}}>None used</Button><label className="flex justify-center gap-2 text-xs"><input type="checkbox" aria-label={item.name+' reviewed'} disabled={busy} checked={details[item.id]?.reviewed||false} onChange={e=>{setDetails(prev=>({...prev,[item.id]:{...prev[item.id],reviewed:e.target.checked}}));setDirty(true);setFinished(false);}}/>Checked</label></div>:key?<Input aria-label={item.name+' '+(key==='patients'?(isFilm(item.id)?'Patients printed for':'Number of patients'):key==='waste'?'Wastage (ml)':isFilm(item.id)?'Films printed':contrasts.includes(item.id)?'Used for patients (ml)':'Used this shift')} className="clinical-input text-center min-w-24" type="number" min="0" step={key==='patients'||!contrasts.includes(item.id)?1:0.01} disabled={busy} value={value??''} placeholder="0" onChange={e=>change(item.id,key,e.target.value)}/>:<div className={'clinical-input clinical-input-readonly text-center '+(label==='Outstanding Stock'?'font-semibold':'')}>{value}{label==='Outstanding Stock'?' '+item.unit:''}</div>}
+        </td>{title==='Contrast'&&!merged&&<td className="p-2 text-center border-b"><div className="clinical-input clinical-input-readonly text-center">{value===undefined?'—':Number((value/bottleCapacity(item.id)).toFixed(3))}</div></td>}</Fragment>;
+       })}
+      </tr>)}
+     </tbody></table></div>
+     {items.some(i=>!i.known)&&<p className="text-xs text-muted-foreground">Opening balance unconfirmed for: {items.filter(i=>!i.known).map(i=>i.name).join(', ')}.</p>}
+     {items.filter(i=>!details[i.id]&&saved[i.id]>0).map(item=><p key={item.id} className="text-xs text-muted-foreground">{item.name}: earlier depletion {saved[item.id]} {item.unit}. Enter the breakdown to review it; it remains unchanged until corrected.</p>)}
+
    </section>;
   })}
   {ready&&<details className="border-t pt-5"><summary className="cursor-pointer font-semibold">Finish shift: check what remains</summary>
