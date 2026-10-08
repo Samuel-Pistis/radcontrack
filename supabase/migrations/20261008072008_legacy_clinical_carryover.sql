@@ -2,7 +2,7 @@
 -- CT/Gastrolux belong to CT; MRI belongs to MRI. Gastrolux location confirmed by HOD.
 begin;
 create table public.clinical_stock_transitions (
- date date primary key references public.daily_contrast_data(date),
+ date date primary key,
  original_data jsonb not null,
  imported_at timestamptz not null default clock_timestamp()
 );
@@ -21,7 +21,7 @@ declare
  v_staff text; v_batch uuid:=gen_random_uuid();
  v_prior_actor text:=current_setting('request.jwt.claim.sub',true);
 begin
- select data into v_data from public.daily_contrast_data where date=v_date for update;
+ select data into v_data from public.daily_contrast_data where date::text=v_date::text for update;
  if not found then return; end if;
  if exists(select 1 from public.clinical_stock_transitions where date=v_date) then return;end if;
  select u.id into v_actor from auth.users u join radcontrack_private.inventory_members m on m.user_id=u.id
@@ -103,7 +103,10 @@ do $guard$
 declare v_definition text;
 begin
  select pg_get_functiondef('radcontrack_private.save_shift(date,text,text,jsonb,text,integer,integer,integer,boolean,jsonb,text,text)'::regprocedure) into v_definition;
- v_definition:=replace(v_definition,'where d.date=p_date and s.key=p_shift','where d.date=p_date and not exists(select 1 from public.clinical_stock_transitions t where t.date=d.date) and s.key=p_shift');
+ v_definition:=replace(v_definition,'where d.date=p_date and s.key=p_shift','where d.date::text=p_date::text and not exists(select 1 from public.clinical_stock_transitions t where t.date::text=d.date::text) and s.key=p_shift');
+ execute v_definition;
+ select pg_get_functiondef('radcontrack_private.prevent_duplicate_clinical()'::regprocedure) into v_definition;
+ v_definition:=replace(v_definition,'where r.date=new.date','where r.date::text=new.date::text');
  execute v_definition;
 end $guard$;
 commit;
