@@ -8,7 +8,10 @@ import type { ShiftDetails } from './shiftWorkflow';
 export async function loadClinicalReport(start: string, end: string) {
  const legacy=await supabase.from('daily_contrast_data').select('date,data').gte('date',start).lte('date',end).order('date');
  if(legacy.error)return {data:null,error:legacy.error};
- const days=new Map<string,DailyData>((legacy.data||[]).map(row=>[row.date,structuredClone(row.data) as unknown as DailyData]));
+ const recovered=await supabase.from('clinical_stock_transitions').select('date').gte('date',start).lte('date',end);
+ if(recovered.error)return {data:null,error:recovered.error};
+ const recoveredDates=new Set((recovered.data||[]).map(row=>row.date));
+ const days=new Map<string,DailyData>((legacy.data||[]).filter(row=>!recoveredDates.has(row.date)).map(row=>[row.date,structuredClone(row.data) as unknown as DailyData]));
  for(let offset=0;;offset+=1000) {
   const result=await supabase.from('room_shift_reviews').select('*').gte('date',start).lte('date',end).order('date').order('room').order('shift').range(offset,offset+999);
   if(result.error)return {data:null,error:result.error};
