@@ -18,6 +18,18 @@ beforeEach(() => { vi.stubGlobal('crypto', { randomUUID: () => 'test-line' }); a
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('shared stock access', () => {
+  it('corrects a saved pick directly on the pick page with its version and reason', async () => {
+    access.canManageStock=false; access.canManageStaff=false;
+    access.movements=[{id:'pick-own',item_id:'gastrolux',movement_type:'issue',quantity:100,occurred_on:'2026-10-08',recipient_name:'Honey',version:2,recorded_by:'honey',destination:'CT',shift:'morning'}];
+    vi.mocked(supabase.rpc).mockResolvedValue({error:null,data:3} as never);
+    render(<MemoryRouter><SharedStock view="pick" /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button',{name:'Edit pick'}));
+    fireEvent.change(screen.getByLabelText('Quantity (ml)'),{target:{value:'50'}});
+    fireEvent.change(screen.getByLabelText('Reason for correction'),{target:{value:'Picked 50, not 100'}});
+    fireEvent.click(screen.getByRole('button',{name:'Save correction'}));
+    await waitFor(()=>expect(supabase.rpc).toHaveBeenCalledWith('correct_stock_movement',expect.objectContaining({p_id:'pick-own',p_version:2,p_quantity:50,p_delete:false})));
+    expect(await screen.findByText(/Pick corrected\. Additional stock received/)).toBeInTheDocument();
+  });
   it('shows count corrections and pick editing beside records, then submits a versioned correction', async () => {
     access.canManageStock = true; access.canManageStaff = false;
     access.movements = [

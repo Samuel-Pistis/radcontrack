@@ -61,9 +61,12 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    let pickQuery = view === 'pick' ? supabase.from('stock_movements').select('*').eq('movement_type','issue').eq('occurred_on',date) : null;
+    if (pickQuery && destination) pickQuery = pickQuery.eq('destination',destination);
+    if (pickQuery && shift) pickQuery = pickQuery.eq('shift',shift);
     const [itemResult, movementResult, roomResult, roomMovementResult] = await Promise.all([
       supabase.from('stock_items').select('*').eq('active', true).order('name'),
-      view === 'history' && historyLocation === 'store' ? supabase.from('stock_movements').select('*').order('created_at', { ascending: false }).order('id',{ascending:false}).range(historyPage*50,historyPage*50+49) : Promise.resolve({data:[],error:null}),
+      pickQuery ? pickQuery.order('created_at',{ascending:false}).order('id',{ascending:false}).range(historyPage*50,historyPage*50+49) : view === 'history' && historyLocation === 'store' ? supabase.from('stock_movements').select('*').order('created_at', { ascending: false }).order('id',{ascending:false}).range(historyPage*50,historyPage*50+49) : Promise.resolve({data:[],error:null}),
       supabase.from('room_stock').select('*'),
       view === 'history' && historyLocation === 'room' ? supabase.from('room_stock_movements').select('*').order('created_at', { ascending: false }).order('id',{ascending:false}).range(historyPage*50,historyPage*50+49) : Promise.resolve({data:[],error:null}),
     ]);
@@ -77,7 +80,8 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
       setError('');
     }
     setLoading(false);
-  }, [view,historyLocation,historyPage]);
+  }, [view,historyLocation,historyPage,date,destination,shift]);
+  useEffect(()=>{setHistoryPage(0);setEditing(null);},[date,destination,shift]);
 
   useEffect(() => {
     void refresh();
@@ -121,7 +125,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
     setSaving(false);
     if (saveError) { setError(saveError.message); return; }
     setNotice(`${typeLabels[type]} saved.${type === 'issue' ? ' Stock moved to the room; it has not been consumed.' : ''} Uncounted balances remain awaiting a physical count.`);
-    setLines([newLine()]); setReference(''); setDestination(''); setConfirmed(false);
+    setLines([newLine()]); setReference(''); if(type!=='issue')setDestination(''); setConfirmed(false);
     setRequestId(crypto.randomUUID());
     await refresh();
   };
@@ -138,7 +142,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
     const result = await supabase.rpc('correct_stock_movement', { p_source: editing.source, p_id: editing.id, p_version: editing.version, p_quantity: Number(editQuantity), p_date: editDate, p_staff: editRecipient, p_reference: editReference || null, p_reason: editReason.trim(), p_delete: remove });
     setSaving(false);
     if (result.error) { setError(result.error.message.includes('Could not find the function') ? 'The correction database update has not been applied yet. Apply the stock movement corrections SQL first.' : result.error.message); return; }
-    setEditing(null); setNotice(remove ? 'Entry removed and affected balances updated. Its audit history is retained.' : 'Entry corrected and affected balances updated. The original record is retained in the audit history.');
+    setEditing(null); setNotice(remove ? 'Entry removed and affected balances updated. Its audit history is retained.' : editing.movement_type==='issue' ? 'Pick corrected. Additional stock received, room stock and department stock are updated. Reopen the daily entry to see the corrected figures. The original is retained in audit history.' : 'Entry corrected and affected balances updated. The original record is retained in the audit history.');
     await refresh();
   };
   const setStaffAccess = async (active: boolean) => {
@@ -210,8 +214,8 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
         <p className="text-sm text-muted-foreground">If a balance needs checking, <Link className="text-primary underline" to="/stock/count">count what is left</Link> at that location. 100 films make one pack.</p>
       </section>
       </>}
-      {view === 'history' && <>
-        <div className="flex flex-wrap gap-2"><Button variant={historyLocation === 'store' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('store');setHistoryPage(0);setEditing(null);}}>Department entries and daily picks</Button><Button variant={historyLocation === 'room' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('room');setHistoryPage(0);setEditing(null);}}>Room counts and usage</Button></div>
+      {(view === 'history'||view==='pick') && <>
+        {view==='history'&&<div className="flex flex-wrap gap-2"><Button variant={historyLocation === 'store' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('store');setHistoryPage(0);setEditing(null);}}>Department entries and daily picks</Button><Button variant={historyLocation === 'room' ? 'default' : 'outline'} onClick={() => {setHistoryLocation('room');setHistoryPage(0);setEditing(null);}}>Room counts and usage</Button></div>}
       {historyLocation === 'room' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">Room picks, usage and counts</h3><p className="text-sm text-muted-foreground">Correct room counts here. Edit daily picks under Recent department movements. To correct actual usage, reopen its date, room and shift on the <Link className="underline" to="/">daily entry page</Link>.</p></div>
         <div className="divide-y">{roomMovements.map(row => <article key={row.id} className="p-5 space-y-3">
           <div className="flex flex-wrap justify-between gap-3"><div><h4 className="font-semibold">{items.find(item => item.id === row.item_id)?.name || row.item_id}</h4><p className="text-sm text-muted-foreground">{row.occurred_on} · {row.room} · {row.shift} · {row.voided_at ? 'Deleted pick' : row.movement_type}</p></div>
@@ -219,11 +223,11 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
           </div><dl className="grid sm:grid-cols-3 gap-3 text-sm"><div><dt className="text-muted-foreground">Change</dt><dd>{row.change > 0 ? '+' : ''}{stockAmount(row.item_id,row.change)}</dd></div><div><dt className="text-muted-foreground">Room balance when recorded</dt><dd>{row.balance_known ? stockAmount(row.item_id,row.balance_after) : 'Awaiting count'}</dd></div><div><dt className="text-muted-foreground">Recorded by</dt><dd>{row.staff_name}</dd></div></dl>
         </article>)}{!loading && roomMovements.length === 0 && <p className="p-5 text-muted-foreground">No room movements recorded yet.</p>}</div>
       </section>}
-      {historyLocation === 'store' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">Recent department movements</h3><p className="text-sm text-muted-foreground">Edit collections and daily picks, or correct a stock count here. Original records remain in the audit history.</p></div>
+      {historyLocation === 'store' && <section className="dashboard-card overflow-hidden"><div className="p-5 border-b"><h3 className="font-bold text-lg">{view==='pick'?'Picks for this date':'Recent department movements'}</h3><p className="text-sm text-muted-foreground">{view==='pick'?'Choose the date, room and shift above to find a pick. Edit an incorrect quantity here; the daily entry’s Additional Stock Received and affected balances adjust automatically. Reopen the daily entry after saving.':'Edit collections and daily picks, or correct a stock count here. Original records remain in the audit history.'}</p></div>
         <div className="divide-y">{movements.map(row => <article key={row.id} className="p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><h4 className="font-semibold">{items.find(item => item.id === row.item_id)?.name || row.item_id}</h4><p className="text-sm text-muted-foreground">{row.occurred_on} · {row.voided_at ? 'Deleted entry' : typeLabels[row.movement_type as MovementType]}</p></div>
-            {!row.voided_at && (canManageStock || (row.movement_type === 'issue' && row.recorded_by === user?.id)) && <Button variant="outline" size="sm" disabled={saving || loading} onClick={() => beginCorrection({ ...row, source: 'store' })}>{row.movement_type === 'opening' ? 'Correct count' : 'Edit / delete'}</Button>}
+            {!row.voided_at && (canManageStock || (row.movement_type === 'issue' && row.recorded_by === user?.id)) && <Button variant="outline" size="sm" disabled={saving || loading} onClick={() => beginCorrection({ ...row, source: 'store' })}>{view==='pick'?'Edit pick':row.movement_type === 'opening' ? 'Correct count' : 'Edit / delete'}</Button>}
           </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
             <div><dt className="text-muted-foreground">Quantity</dt><dd>{row.quantity} {items.find(item => item.id === row.item_id)?.unit}</dd></div>
@@ -232,6 +236,7 @@ export default function SharedStock({ view = 'pick' }: { view?: StockView }) {
             <div><dt className="text-muted-foreground">Destination</dt><dd>{[row.destination,row.shift].filter(Boolean).join(' · ') || '—'}</dd></div>
             <div><dt className="text-muted-foreground">Reference</dt><dd className="break-words">{row.reference || '—'}</dd></div>
           </dl>
+          {view==='pick'&&row.destination&&row.shift&&<Link className="text-primary underline text-sm" to={`/?date=${row.occurred_on}&room=${encodeURIComponent(row.destination)}&shift=${row.shift}`}>Open this room’s daily entry</Link>}
         </article>)}{!loading && movements.length === 0 && <p className="p-5 text-muted-foreground">No shared movements recorded yet.</p>}</div>
       </section>}
         <div className="flex items-center gap-3"><Button variant="outline" disabled={loading || historyPage === 0} onClick={() => {setHistoryPage(page => page-1);setEditing(null);}}>Newer entries</Button><span className="text-sm text-muted-foreground">Page {historyPage+1}</span><Button variant="outline" disabled={loading || (historyLocation === 'store' ? movements : roomMovements).length < 50} onClick={() => {setHistoryPage(page => page+1);setEditing(null);}}>Older entries</Button></div>
