@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      clinical_stock_transitions: {
+        Row: {date:string;original_data:Json;imported_at:string}
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       room_shift_reviews: {
         Row: {date:string;room:string;shift:string;details:Json;physical:Json;note:string;staff:string;stock_token:string;finished:boolean;version:number;updated_at:string}
         Insert: never

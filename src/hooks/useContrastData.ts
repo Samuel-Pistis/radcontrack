@@ -8,25 +8,33 @@ import {
   createEmptyDailyData 
 } from '@/types/contrast';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { clinicalDateKey, recalculateClinicalDay, carryClinicalDay } from '@/lib/clinicalContinuity';
 
 import { clinicalBottleCapacity, convertContrast } from '@/lib/contrastVolume';
 
 export const useContrastData = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [data, setData] = useState<DailyData>(() => {
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = format(new Date(), 'yyyy-MM-dd');
     return createEmptyDailyData(dateStr);
   });
   const [isLoading, setIsLoading] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { toast } = useToast();
 
-  const dateKey = selectedDate.toISOString().split('T')[0];
+  const dateKey = clinicalDateKey(selectedDate);
+  const [hasRecord, setHasRecord] = useState(false);
+  const [carriedFrom, setCarriedFrom] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [loadingError, setLoadingError] = useState('');
 
   // Load data from database
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       setIsLoading(true);
+      setLoadingError('');
       try {
         const { data: row, error } = await supabase
           .from('daily_contrast_data')
@@ -34,24 +42,43 @@ export const useContrastData = () => {
           .eq('date', dateKey)
           .maybeSingle();
 
+        if (cancelled) return;
+        const transitions = await supabase.from('clinical_stock_transitions').select('date').lte('date',dateKey).order('date',{ascending:false}).limit(1);
+        if (cancelled) return;
+        if (transitions.error) throw transitions.error;
+        setConnected(!!transitions.data?.length);
+        setHasRecord(!!row?.data);
+        setCarriedFrom(null);
         if (error) {
+          setLoadingError('The saved record could not load. Do not re-enter it; reload or contact support.');
           console.error('Error loading data:', error);
           toast({ title: 'Error loading data', description: 'Unable to load data. Please try again or contact support.', variant: 'destructive' });
           setData(createEmptyDailyData(dateKey));
         } else if (row?.data) {
-          setData(row.data as unknown as DailyData);
+          setData(recalculateClinicalDay(row.data as unknown as DailyData));
         } else {
-          setData(createEmptyDailyData(dateKey));
+          const previousDate = new Date(selectedDate);
+          previousDate.setDate(previousDate.getDate() - 1);
+          const previousKey = clinicalDateKey(previousDate);
+          const previous = await supabase.from('daily_contrast_data').select('data').eq('date', previousKey).maybeSingle();
+          if (cancelled) return;
+          if (previous.error) throw previous.error;
+          if (previous.data?.data && !transitions.data?.length) {
+            setData(carryClinicalDay(previous.data.data as unknown as DailyData, createEmptyDailyData(dateKey)));
+            setCarriedFrom(previousKey);
+          } else setData(createEmptyDailyData(dateKey));
         }
       } catch (err) {
         console.error('Error loading data:', err);
-        setData(createEmptyDailyData(dateKey));
+        if (!cancelled) setLoadingError('The saved record could not load. Check that the recovery database update has been applied, then reload.');
+        if (!cancelled) setData(createEmptyDailyData(dateKey));
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     loadData();
+    return () => { cancelled = true; };
   }, [dateKey, toast]);
 
   // Debounced save to database
@@ -99,7 +126,7 @@ export const useContrastData = () => {
   // Helper to update and save
   const updateAndSave = useCallback((updater: (prev: DailyData) => DailyData) => {
     setData(prev => {
-      const newData = updater(prev);
+      const newData = recalculateClinicalDay(updater(prev));
       saveToDatabase(newData);
       return newData;
     });
@@ -321,6 +348,10 @@ export const useContrastData = () => {
     getOutstandingValues,
     updateMetadata,
     resetForm,
+    hasRecord,
+    carriedFrom,
+    connected,
+    loadingError,
   };
 };
 
