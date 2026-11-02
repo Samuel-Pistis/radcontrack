@@ -1,6 +1,10 @@
 # Daily close workflow
 
-Implemented locally; not applied to the live database or deployed.
+Released to the live database and Cloudflare Pages on 2 November 2026.
+
+Production backup: ignored `deployment-artifacts/daily-close-2026-11-02/production-before.csv` (JSON export inside CSV). The guarded transaction returned PRESERVED for all 13 original public/private tables, including 243 clinical days, 123 shift reviews, 240 shift usage records, 356 department movements, 427 room movements and 921 correction audit records. All original reviews retained legacy mode; no daily records were fabricated. RLS enabled, direct authenticated insert and anonymous execution denied. Existing staff login successfully loaded the new context and yesterday's original MRI record.
+
+Final live check caught PostgreSQL's null composite represented as an object of null fields. The client now normalizes an absent close to null so an untouched day cannot claim to be saved. Regression test passed. No data changes are needed for this display correction.
 
 ## Staff workflow
 

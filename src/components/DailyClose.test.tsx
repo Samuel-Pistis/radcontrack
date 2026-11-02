@@ -10,6 +10,12 @@ beforeEach(()=>{localStorage.clear();m.rpc.mockReset();m.rpc.mockImplementation(
 afterEach(()=>{cleanup();vi.restoreAllMocks();});
 const setup=async()=>{render(<MemoryRouter><DailyClose date="2026-11-02" onDirtyChange={()=>{}}/></MemoryRouter>);await screen.findByLabelText('Shared CD plates daily total');};
 describe('daily close',()=>{
+ it('does not call an empty database composite a saved daily close',async()=>{
+  m.rpc.mockResolvedValue({data:{...ctx,close:{date:null,version:null,details:null,finished:null,stock_token:null}},error:null});
+  await setup();
+  expect(screen.getByRole('status')).toHaveTextContent('Not closed');
+  expect(screen.getByRole('status')).not.toHaveTextContent('Saved');
+ });
  it('shows confirmed success even if the following refresh fails',async()=>{
   await setup();fireEvent.change(screen.getByPlaceholderText('Your full name'),{target:{value:'Honey'}});
   fireEvent.change(screen.getByLabelText('Shared CD plates daily total'),{target:{value:'12'}});

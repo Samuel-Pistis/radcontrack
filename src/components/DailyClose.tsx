@@ -24,7 +24,10 @@ export function DailyClose({date,onDirtyChange}:{date:string;onDirtyChange:(dirt
  useEffect(()=>onDirtyChange(dirty),[dirty,onDirtyChange]);
  const load=useCallback(async()=>{setBusy(true);setError('');try{
   const r=await supabase.rpc('daily_close_context',{p_date:date});if(r.error)throw new Error(r.error.message);
-  const context=r.data as unknown as Context;setCtx(context);
+  const context=r.data as unknown as Context;
+  // PostgreSQL can return an empty composite as an object of null fields.
+  if(!context.close?.version)context.close=null;
+  setCtx(context);
   const initial={...(context.close?.details||{})};
   // Earlier shift usage is visible and included, never deducted again or rewritten.
   for(const i of context.items)if(!initial[i.key]&&i.earlier>0)initial[i.key]={used:i.earlier,reviewed:false};
