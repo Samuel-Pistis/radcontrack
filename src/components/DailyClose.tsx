@@ -56,7 +56,7 @@ export function DailyClose({date,onDirtyChange}:{date:string;onDirtyChange:(dirt
  return <section className="space-y-5" aria-label="Daily close">
   <div><h2 className="text-xl font-bold">Daily close</h2><p className="text-sm text-muted-foreground">Night personnel: confirm the whole day from the room sheets. Include reprints.</p></div>
   {readOnly&&<p>Reference only. Ask Honey to correct an older day.</p>}
-  
+
   {!ctx?<p>{busy?'Loading the day…':'Daily close is unavailable. No entries have been changed.'}</p>:<fieldset disabled={busy||readOnly} className="space-y-6">
    <div className="flex flex-wrap gap-4 justify-between items-end"><label className="text-sm">Closed by<Input value={staff} placeholder="Your full name" onChange={e=>{setStaff(e.target.value);setDirty(true);}}/></label><p role="status" className="text-sm">{dirty?'Unsaved changes':ctx.close?.finished&&ctx.close.stock_token===ctx.token?'Day closed':ctx.close?'Saved — review and close':'Not closed'} · {missing.length} entries left</p></div>
    {ctx.close?.finished&&ctx.close.stock_token!==ctx.token&&<p role="status" className="text-amber-700">Stock changed after this day was closed. Review and close again.</p>}
